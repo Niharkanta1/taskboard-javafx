@@ -1,0 +1,200 @@
+# ============================================================
+
+# Java / Maven
+
+# ============================================================
+
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+
+# Maven Wrapper
+
+!.mvn/wrapper/maven-wrapper.jar
+
+# ============================================================
+
+# IDE - IntelliJ IDEA
+
+# ============================================================
+
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IntelliJ generated files
+
+out/
+
+# ============================================================
+
+# IDE - Eclipse
+
+# ============================================================
+
+.classpath
+.project
+.settings/
+.factorypath
+
+# ============================================================
+
+# IDE - VS Code
+
+# ============================================================
+
+.vscode/
+*.code-workspace
+
+# ============================================================
+
+# JavaFX / Scene Builder
+
+# ============================================================
+
+# Scene Builder temporary files
+
+*.bak
+*.tmp
+
+# ============================================================
+
+# Application Runtime Data
+
+# ============================================================
+
+# SQLite database
+
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.sqlite
+data/*.sqlite3
+
+# SQLite backups
+
+data/*.db.bak
+data/*.sqlite.bak
+
+# Uploaded/attached files
+
+data/attachments/
+
+# Runtime-generated files
+
+logs/
+*.log
+
+# ============================================================
+
+# OS Generated Files
+
+# ============================================================
+
+# Windows
+
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+
+# macOS
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+
+*~
+
+# ============================================================
+
+# Temporary / Backup Files
+
+# ============================================================
+
+*.swp
+*.swo
+*.orig
+*.rej
+
+# ============================================================
+
+# Environment / Secrets
+
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+*.secret
+secrets/
+credentials/
+
+# ============================================================
+
+# Test / Coverage Output
+
+# ============================================================
+
+coverage/
+*.exec
+*.jacoco
+jacoco-report/
+
+# ============================================================
+
+# Build / Packaging Output
+
+# ============================================================
+
+build/
+dist/
+release/
+
+# Native packaging output
+
+*.msi
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# ============================================================
+
+# Application-specific temporary files
+
+# ============================================================
+
+.tmp/
+temp/
+tmp/
+.cache/
+.cache-javafx/
+
+# ============================================================
+
+# Keep project documentation
+
+# ============================================================
+
+!README.md
+!PLAN.md
+!Plan.md
+!AGENT_STATE.md
