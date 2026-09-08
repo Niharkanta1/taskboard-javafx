@@ -1,0 +1,84 @@
+/* Dashboard styles (Phase 3: workspace list + management + dialog) */
+
+.dashboard {
+    padding: 24px;
+}
+
+.dashboard-welcome {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.dashboard-section-title {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.workspace-list {
+    -fx-background-color: white;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4px;
+    -fx-padding: 4px;
+}
+
+.workspace-item-name {
+    font-weight: bold;
+}
+
+.workspace-item-description {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.empty-hint {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.dashboard-actions {
+    padding-top: 4px;
+}
+
+.dashboard-button {
+    max-width: 160px;
+    -fx-background-color: -app-accent;
+    -fx-text-fill: white;
+    cursor: hand;
+}
+
+.dashboard-button:hover {
+    -fx-opacity: 0.9;
+}
+
+/* Workspace dialog */
+
+.dialog-title {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 16px;
+    background-color: -app-accent;
+    color: white;
+}
+
+.workspace-dialog {
+    padding: 16px;
+}
+
+.dialog-error {
+    -fx-text-fill: #b91c1c;
+    font-size: 12px;
+}
+
+.dialog-actions {
+    padding: 12px 16px;
+}
+
+.dialog-save {
+    -fx-background-color: -app-accent;
+    -fx-text-fill: white;
+    cursor: hand;
+}
+
+.dialog-save:hover {
+    -fx-opacity: 0.9;
+}

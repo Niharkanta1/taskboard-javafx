@@ -1,0 +1,25 @@
+/* Login screen styles */
+
+.login-form {
+    padding: 24px;
+}
+
+.login-label {
+    font-size: 14px;
+}
+
+.login-button {
+    max-width: 260px;
+    -fx-background-color: -app-accent;
+    -fx-text-fill: white;
+    cursor: hand;
+}
+
+.login-button:hover {
+    -fx-opacity: 0.9;
+}
+
+.login-error {
+    -fx-text-fill: #b91c1c;
+    font-size: 13px;
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml/1">
+
+    <top>
+        <Label styleClass="app-title" text="TaskBoard" />
+    </top>
+
+    <center>
+        <VBox styleClass="dashboard" spacing="12">
+            <Label fx:id="welcomeLabel" styleClass="dashboard-welcome" text="" />
+            <Label styleClass="dashboard-section-title" text="Workspaces" />
+            <ListView fx:id="workspaceList" styleClass="workspace-list" prefHeight="220" />
+            <Label fx:id="emptyHint" styleClass="empty-hint" text="No workspaces yet." visible="false" />
+            <HBox styleClass="dashboard-actions" spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="createButton" styleClass="dashboard-button"
+                       text="Create Workspace" onAction="#onCreateWorkspace" />
+                <Button fx:id="editButton" styleClass="dashboard-button"
+                       text="Edit" onAction="#onEditWorkspace" />
+                <Button fx:id="deleteButton" styleClass="dashboard-button"
+                       text="Delete" onAction="#onDeleteWorkspace" />
+            </HBox>
+            <Button fx:id="logoutButton" styleClass="dashboard-button" text="Logout" onAction="#onLogout" />
+        </VBox>
+    </center>
+
+</BorderPane>

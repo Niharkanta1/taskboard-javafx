@@ -1,0 +1,21 @@
+/* TaskBoard - global application styles */
+
+.root {
+    -app-bg: #f5f6f7;
+    -app-fg: #1f2933;
+    -app-accent: #2563eb;
+    background-color: -app-bg;
+    color: -app-fg;
+}
+
+.app-title {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 12px 16px;
+    background-color: -app-accent;
+    color: white;
+}
+
+.app-status {
+    font-size: 14px;
+}

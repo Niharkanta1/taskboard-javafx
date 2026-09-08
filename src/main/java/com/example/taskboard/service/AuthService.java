@@ -1,0 +1,93 @@
+package com.example.taskboard.service;
+
+import org.mindrot.jbcrypt.BCrypt;
+
+import com.example.taskboard.exception.AuthenticationException;
+import com.example.taskboard.exception.ValidationException;
+import com.example.taskboard.model.User;
+import com.example.taskboard.repository.UserRepository;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+
+/**
+ * Authentication service: validates credentials and verifies them against
+ * the stored BCrypt hash.
+ *
+ * <p>Plaintext passwords are never compared directly against database
+ * values, never stored and never logged.</p>
+ */
+public class AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
+    private static final int BCRYPT_LOG_ROUNDS = 12;
+
+    private final UserRepository userRepository;
+
+    public AuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Authenticates the given credentials.
+     *
+     * @return the user on success
+     * @throws ValidationException     if the username or password is blank
+     * @throws AuthenticationException if the credentials do not match
+     */
+    public User login(String username, String password) {
+        validateCredentials(username, password);
+
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isEmpty()) {
+            logger.warn("Login failed for unknown username '{}'", username);
+            throw new AuthenticationException("Invalid username or password.");
+        }
+        if (!verifyPassword(password, user.get().getPasswordHash())) {
+            logger.warn("Login failed for user '{}': password mismatch", username);
+            throw new AuthenticationException("Invalid username or password.");
+        }
+        logger.info("User '{}' authenticated successfully", username);
+        return user.get();
+    }
+
+    /**
+     * Hashes a plaintext password with BCrypt. The raw password is never
+     * stored or logged.
+     */
+    public String hashPassword(String rawPassword) {
+        if (rawPassword == null || rawPassword.isBlank()) {
+            throw new ValidationException("Password is required.");
+        }
+        String salt = BCrypt.gensalt(BCRYPT_LOG_ROUNDS);
+        return BCrypt.hashpw(rawPassword, salt);
+    }
+
+    /**
+     * Verifies a plaintext password against a stored BCrypt hash.
+     * Malformed hashes are treated as verification failures.
+     */
+    public boolean verifyPassword(String rawPassword, String hashedPassword) {
+        if (rawPassword == null || hashedPassword == null) {
+            return false;
+        }
+        try {
+            return BCrypt.checkpw(rawPassword, hashedPassword);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Password hash is malformed; treating verification as failed", e);
+            return false;
+        }
+    }
+
+    private void validateCredentials(String username, String password) {
+        if (username == null || username.isBlank()) {
+            throw new ValidationException("Username is required.");
+        }
+        if (password == null || password.isBlank()) {
+            throw new ValidationException("Password is required.");
+        }
+    }
+}

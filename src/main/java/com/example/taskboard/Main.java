@@ -1,0 +1,71 @@
+package com.example.taskboard;
+
+import com.example.taskboard.config.AppConfig;
+import com.example.taskboard.database.DatabaseManager;
+import com.example.taskboard.repository.UserRepository;
+import com.example.taskboard.repository.WorkspaceRepository;
+import com.example.taskboard.repository.impl.UserRepositoryImpl;
+import com.example.taskboard.repository.impl.WorkspaceRepositoryImpl;
+import com.example.taskboard.service.AuthService;
+import com.example.taskboard.service.DevUserBootstrap;
+import com.example.taskboard.service.NavigationService;
+import com.example.taskboard.service.WorkspaceService;
+import com.example.taskboard.session.SessionManager;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * JavaFX application entry point.
+ *
+ * <p>Initializes the database, wires the service layer, ensures the
+ * development-only initial user exists and opens the login screen.
+ * All visual styling lives in CSS.</p>
+ */
+public class Main extends Application {
+
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
+    private DatabaseManager databaseManager;
+
+    @Override
+    public void start(Stage stage) throws Exception {
+        logger.info("Starting {} v{}", AppConfig.APP_NAME, AppConfig.APP_VERSION);
+
+        databaseManager = new DatabaseManager();
+        try {
+            databaseManager.initialize();
+        } catch (RuntimeException e) {
+            logger.error("Database initialization failed; application cannot start", e);
+            throw e;
+        }
+
+        UserRepository userRepository = new UserRepositoryImpl(databaseManager);
+        WorkspaceRepository workspaceRepository = new WorkspaceRepositoryImpl(databaseManager);
+        AuthService authService = new AuthService(userRepository);
+        WorkspaceService workspaceService = new WorkspaceService(workspaceRepository);
+        SessionManager sessionManager = new SessionManager();
+        NavigationService navigationService = new NavigationService(stage, authService, sessionManager, workspaceService);
+
+        new DevUserBootstrap(userRepository, authService).ensureInitialUser();
+
+        navigationService.showLogin();
+
+        logger.info("Application started successfully.");
+    }
+
+    @Override
+    public void stop() {
+        if (databaseManager != null) {
+            databaseManager.close();
+        }
+        logger.info("Application stopped.");
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
