@@ -16,5 +16,12 @@ public interface BoardRepository {
 
     List<Board> findByWorkspace(long workspaceId);
 
+    Board update(Board board);
+
+    /**
+     * @return the number of deleted rows (0 or 1)
+     */
+    int delete(long id);
+
     long count();
 }

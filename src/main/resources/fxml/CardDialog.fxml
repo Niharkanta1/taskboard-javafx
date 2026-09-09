@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml/1">
+
+    <top>
+        <Label fx:id="titleLabel" styleClass="dialog-title" text="New Card" />
+    </top>
+
+    <center>
+        <VBox styleClass="workspace-dialog" spacing="10">
+            <Label styleClass="form-label" text="Title" />
+            <TextField fx:id="titleField" promptText="Card title" />
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label styleClass="form-label" text="Status" />
+                <ChoiceBox fx:id="statusChoice" prefWidth="150" />
+                <Label styleClass="form-label" text="Due date" />
+                <DatePicker fx:id="dueDatePicker" />
+            </HBox>
+            <Label styleClass="form-label" text="Description (Markdown)" />
+            <HBox styleClass="description-mode-bar" spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="editButton" styleClass="mode-button" text="Edit" onAction="#onEditMode" />
+                <Button fx:id="previewButton" styleClass="mode-button" text="Preview" onAction="#onPreviewMode" />
+            </HBox>
+            <ScrollPane styleClass="dialog-scroll" fitToWidth="true" fitToHeight="true">
+                <content>
+                    <StackPane>
+                        <TextArea fx:id="descriptionField" promptText="Markdown source" />
+                        <VBox fx:id="descriptionPreview" styleClass="card-markdown" spacing="4" />
+                    </StackPane>
+                </content>
+            </ScrollPane>
+            <Label fx:id="errorLabel" styleClass="dialog-error" text="" wrapText="true" />
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox styleClass="dialog-actions" spacing="8" alignment="CENTER_RIGHT">
+            <Button fx:id="deleteButton" styleClass="dialog-delete" text="Delete" onAction="#onDelete" visible="false" managed="false" />
+            <Button fx:id="cancelButton" styleClass="dialog-cancel" text="Cancel" onAction="#onCancel" />
+            <Button fx:id="saveButton" styleClass="dialog-save" text="Save" onAction="#onSave" defaultButton="true" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

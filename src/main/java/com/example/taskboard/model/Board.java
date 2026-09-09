@@ -1,6 +1,7 @@
 package com.example.taskboard.model;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * A kanban board belonging to exactly one workspace.
@@ -13,6 +14,7 @@ public class Board {
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
+    private List<Card> cards;
 
     public Board() {
     }
@@ -72,5 +74,18 @@ public class Board {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    /**
+     * Transient view data: the board's cards, populated by
+     * {@code BoardService.loadBoard}. Never persisted; repositories
+     * neither read nor write this field.
+     */
+    public List<Card> getCards() {
+        return cards;
+    }
+
+    public void setCards(List<Card> cards) {
+        this.cards = cards;
     }
 }

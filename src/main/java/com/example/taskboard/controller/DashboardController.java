@@ -13,7 +13,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Dashboard: shows the signed-in user and manages workspaces.
@@ -51,6 +49,9 @@ public class DashboardController {
 
     @FXML
     private ListView<Workspace> workspaceList;
+
+    @FXML
+    private Button openButton;
 
     @FXML
     private Button createButton;
@@ -87,6 +88,14 @@ public class DashboardController {
     }
 
     @FXML
+    private void onOpenWorkspace() {
+        Workspace selected = workspaceList.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            navigationService.showWorkspace(selected);
+        }
+    }
+
+    @FXML
     private void onCreateWorkspace() {
         showWorkspaceDialog(null);
     }
@@ -106,12 +115,12 @@ public class DashboardController {
             return;
         }
 
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Workspace");
-        confirm.setHeaderText("Delete workspace \"" + selected.getName() + "\"?");
-        confirm.setContentText("This will also delete all boards and cards in this workspace.");
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isEmpty() || result.get() != ButtonType.OK) {
+        boolean confirmed = DeleteDialogs.confirmDelete(
+                (Stage) workspaceList.getScene().getWindow(),
+                "Delete Workspace",
+                "Delete workspace \"" + selected.getName() + "\"?\n"
+                        + "This will also delete all boards and cards in this workspace.");
+        if (!confirmed) {
             return;
         }
 
@@ -186,6 +195,11 @@ public class DashboardController {
                     }
                     setGraphic(box);
                     setText("");
+                    setOnMouseClicked(event -> {
+                        if (!isEmpty() && workspace != null && event.getClickCount() == 2) {
+                            navigationService.showWorkspace(workspace);
+                        }
+                    });
                 }
             }
         };

@@ -1,84 +1,62 @@
 /* Dashboard styles (Phase 3: workspace list + management + dialog) */
 
 .dashboard {
-    padding: 24px;
+    -fx-padding: 24px;
 }
 
 .dashboard-welcome {
-    font-size: 16px;
-    font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
 }
 
 .dashboard-section-title {
-    font-size: 14px;
-    font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg-muted;
 }
 
 .workspace-list {
-    -fx-background-color: white;
-    -fx-border-color: #d1d5db;
-    -fx-border-radius: 4px;
-    -fx-padding: 4px;
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 6px;
+}
+
+.workspace-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 14px;
+}
+
+.workspace-list .list-cell:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.workspace-list .list-cell:selected {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e40af;
 }
 
 .workspace-item-name {
-    font-weight: bold;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
 }
 
 .workspace-item-description {
-    font-size: 12px;
-    opacity: 0.75;
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-fg-secondary;
+    -fx-opacity: 0.9;
 }
 
 .empty-hint {
-    font-size: 13px;
-    opacity: 0.7;
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-fg-muted;
 }
 
 .dashboard-actions {
-    padding-top: 4px;
+    -fx-padding: 4px 0 0 0;
 }
 
-.dashboard-button {
-    max-width: 160px;
-    -fx-background-color: -app-accent;
-    -fx-text-fill: white;
-    cursor: hand;
-}
 
-.dashboard-button:hover {
-    -fx-opacity: 0.9;
-}
-
-/* Workspace dialog */
-
-.dialog-title {
-    font-size: 16px;
-    font-weight: bold;
-    padding: 12px 16px;
-    background-color: -app-accent;
-    color: white;
-}
-
-.workspace-dialog {
-    padding: 16px;
-}
-
-.dialog-error {
-    -fx-text-fill: #b91c1c;
-    font-size: 12px;
-}
-
-.dialog-actions {
-    padding: 12px 16px;
-}
-
-.dialog-save {
-    -fx-background-color: -app-accent;
-    -fx-text-fill: white;
-    cursor: hand;
-}
-
-.dialog-save:hover {
-    -fx-opacity: 0.9;
-}

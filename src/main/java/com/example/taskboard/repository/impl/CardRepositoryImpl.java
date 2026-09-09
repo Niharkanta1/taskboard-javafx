@@ -96,6 +96,44 @@ public class CardRepositoryImpl implements CardRepository {
     }
 
     @Override
+    public Card update(Card card) {
+        return databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE cards SET title = ?, description = ?, status = ?, position = ?, "
+                            + "due_date = ?, updated_at = ?, completed_at = ? WHERE id = ?")) {
+                ps.setString(1, card.getTitle());
+                ps.setString(2, card.getDescription());
+                ps.setString(3, card.getStatus().getCode());
+                ps.setDouble(4, card.getPosition());
+                ps.setString(5, card.getDueDate() == null ? null : card.getDueDate().toString());
+                ps.setString(6, card.getUpdatedAt().toString());
+                ps.setString(7, card.getCompletedAt() == null ? null : card.getCompletedAt().toString());
+                ps.setLong(8, card.getId());
+                int rows = ps.executeUpdate();
+                if (rows != 1) {
+                    throw new DatabaseException("Card update did not affect exactly one row");
+                }
+                return card;
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to update card", e);
+            }
+        });
+    }
+
+    @Override
+    public int delete(long id) {
+        return databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "DELETE FROM cards WHERE id = ?")) {
+                ps.setLong(1, id);
+                return ps.executeUpdate();
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to delete card", e);
+            }
+        });
+    }
+
+    @Override
     public long count() {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM cards")) {

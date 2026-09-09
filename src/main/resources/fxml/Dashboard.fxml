@@ -21,6 +21,8 @@
             <ListView fx:id="workspaceList" styleClass="workspace-list" prefHeight="220" />
             <Label fx:id="emptyHint" styleClass="empty-hint" text="No workspaces yet." visible="false" />
             <HBox styleClass="dashboard-actions" spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="openButton" styleClass="dashboard-button"
+                       text="Open Workspace" onAction="#onOpenWorkspace" />
                 <Button fx:id="createButton" styleClass="dashboard-button"
                        text="Create Workspace" onAction="#onCreateWorkspace" />
                 <Button fx:id="editButton" styleClass="dashboard-button"

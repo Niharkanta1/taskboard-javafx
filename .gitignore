@@ -198,3 +198,5 @@ tmp/
 !PLAN.md
 !Plan.md
 !AGENT_STATE.md
+
+tmp-css-test/**

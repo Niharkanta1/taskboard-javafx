@@ -1,21 +1,249 @@
-/* TaskBoard - global application styles */
+/* TaskBoard - global application styles (modern light theme) */
 
 .root {
-    -app-bg: #f5f6f7;
-    -app-fg: #1f2933;
+    -app-bg: #f7f8fa;
+    -app-surface: #ffffff;
+    -app-border: #e2e8f0;
+    -app-fg: #0f172a;
+    -app-fg-secondary: #475569;
+    -app-fg-muted: #64748b;
     -app-accent: #2563eb;
-    background-color: -app-bg;
-    color: -app-fg;
+    -app-accent-hover: #1d4ed8;
+    -app-accent-pressed: #1e40af;
+    -app-danger: #dc2626;
+
+    -fx-background-color: -app-bg;
+    -fx-text-fill: -app-fg;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
 }
 
+/* App header bar (login, dashboard, board, workspace views) */
 .app-title {
-    font-size: 24px;
-    font-weight: bold;
-    padding: 12px 16px;
-    background-color: -app-accent;
-    color: white;
+    -fx-background-color: -app-surface;
+    -fx-text-fill: -app-fg;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px 20px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -app-border;
 }
 
 .app-status {
-    font-size: 14px;
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-fg-secondary;
+}
+
+/* Primary buttons */
+.login-button, .dashboard-button, .dialog-save {
+    -fx-background-color: -app-accent;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.login-button:hover, .dashboard-button:hover, .dialog-save:hover {
+    -fx-background-color: -app-accent-hover;
+}
+
+.login-button:pressed, .dashboard-button:pressed, .dialog-save:pressed {
+    -fx-background-color: -app-accent-pressed;
+}
+
+/* Secondary buttons */
+.new-card-button, .mode-button, .dialog-cancel {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-text-fill: -app-fg-secondary;
+    -fx-font-size: 13px;
+    -fx-padding: 6px 14px;
+    -fx-cursor: hand;
+}
+
+.new-card-button:hover, .mode-button:hover, .dialog-cancel:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.mode-button-active {
+    -fx-background-color: -app-accent;
+    -fx-border-color: -app-accent;
+    -fx-text-fill: white;
+}
+
+/* Danger button */
+.dialog-delete {
+    -fx-background-color: -app-danger;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.dialog-delete:hover {
+    -fx-background-color: #b91c1c;
+}
+
+/* Dialog styles (shared across all modal dialogs) */
+
+.dialog-title {
+    -fx-background-color: -app-surface;
+    -fx-text-fill: -app-fg;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px 20px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -app-border;
+}
+
+.workspace-dialog {
+    -fx-padding: 20px;
+}
+
+.dialog-scroll {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.dialog-scroll .text-area {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.dialog-error {
+    -fx-text-fill: #b91c1c;
+    -fx-font-size: 12px;
+}
+
+.dialog-actions {
+    -fx-background-color: #f8fafc;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -app-border;
+    -fx-padding: 12px 16px;
+}
+
+.description-mode-bar {
+    -fx-padding: 4px 0;
+}
+
+/* Form controls (shared across dialogs and forms) */
+
+.form-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg-secondary;
+}
+
+.text-field {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 10px;
+}
+
+.text-field:focused {
+    -fx-border-color: -app-accent;
+}
+
+.text-area {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 10px;
+}
+
+.text-area:focused {
+    -fx-border-color: -app-accent;
+}
+
+.choice-box {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 6px 8px;
+}
+
+.choice-box:focused {
+    -fx-border-color: -app-accent;
+}
+
+.choice-box .label {
+    -fx-text-fill: -app-fg;
+}
+
+.choice-box .arrow-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-fg-secondary;
+    -fx-cursor: hand;
+}
+
+.choice-box .arrow-button:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.choice-box .menu {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+
+.choice-box .menu .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 6px 10px;
+}
+
+.choice-box .menu .list-cell:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.choice-box .menu .list-cell:selected {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e40af;
+}
+
+.date-picker {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 6px 8px;
+}
+
+.date-picker:focused {
+    -fx-border-color: -app-accent;
+}
+
+.date-picker .date-picker-text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.date-picker .arrow-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-fg-secondary;
+    -fx-cursor: hand;
+}
+
+.date-picker .arrow-button:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.date-picker .date-picker-popup {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
 }

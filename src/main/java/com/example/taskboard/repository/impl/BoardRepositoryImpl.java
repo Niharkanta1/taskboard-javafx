@@ -88,6 +88,39 @@ public class BoardRepositoryImpl implements BoardRepository {
     }
 
     @Override
+    public Board update(Board board) {
+        return databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE boards SET name = ?, description = ?, updated_at = ? WHERE id = ?")) {
+                ps.setString(1, board.getName());
+                ps.setString(2, board.getDescription());
+                ps.setString(3, board.getUpdatedAt().toString());
+                ps.setLong(4, board.getId());
+                int rows = ps.executeUpdate();
+                if (rows != 1) {
+                    throw new DatabaseException("Board update did not affect exactly one row");
+                }
+                return board;
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to update board", e);
+            }
+        });
+    }
+
+    @Override
+    public int delete(long id) {
+        return databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "DELETE FROM boards WHERE id = ?")) {
+                ps.setLong(1, id);
+                return ps.executeUpdate();
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to delete board", e);
+            }
+        });
+    }
+
+    @Override
     public long count() {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM boards")) {

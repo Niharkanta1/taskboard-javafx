@@ -1,25 +1,20 @@
 /* Login screen styles */
 
 .login-form {
-    padding: 24px;
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 12px;
+    -fx-padding: 28px 32px;
+    -fx-max-width: 380px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 12, 0, 0, 0);
 }
 
 .login-label {
-    font-size: 14px;
-}
-
-.login-button {
-    max-width: 260px;
-    -fx-background-color: -app-accent;
-    -fx-text-fill: white;
-    cursor: hand;
-}
-
-.login-button:hover {
-    -fx-opacity: 0.9;
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-fg-secondary;
 }
 
 .login-error {
     -fx-text-fill: #b91c1c;
-    font-size: 13px;
+    -fx-font-size: 13px;
 }

@@ -1,0 +1,167 @@
+/* Card component styles (Phase 4) */
+
+.card {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10px;
+    -fx-padding: 12px;
+    -fx-cursor: hand;
+    /* Fixed height: every card is the same size and never grows with content. */
+    -fx-min-height: 190px;
+    -fx-pref-height: 190px;
+    -fx-max-height: 190px;
+}
+
+.card:hover {
+    -fx-border-color: #94a3b8;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 10, 0, 0, 0);
+}
+
+.card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
+    /* Title is limited to two lines (longer titles are truncated in CardView). */
+    -fx-max-height: 40px;
+}
+
+/* Fixed-height viewport for the description: only what fits is visible. */
+.card-desc-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-min-height: 92px;
+    -fx-pref-height: 92px;
+    -fx-max-height: 92px;
+}
+
+.card-description {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-fg-secondary;
+}
+
+/* Due date pill styles (Phase 6) */
+
+.card-due-date {
+    -fx-font-size: 11px;
+    -fx-padding: 2px 8px;
+    -fx-background-radius: 999px;
+}
+
+.due-normal {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #475569;
+}
+
+.due-today {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+    -fx-font-weight: bold;
+}
+
+.due-overdue {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
+    -fx-font-weight: bold;
+}
+
+.due-completed {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #15803d;
+}
+
+/* Markdown description styles (Phase 7) */
+
+.card-markdown-heading {
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
+}
+
+.md-h1 {
+    -fx-font-size: 16px;
+}
+
+.md-h2 {
+    -fx-font-size: 14px;
+}
+
+.md-h3 {
+    -fx-font-size: 13px;
+}
+
+.md-h4 {
+    -fx-font-size: 12px;
+}
+
+.md-h5 {
+    -fx-font-size: 12px;
+}
+
+.md-h6 {
+    -fx-font-size: 11px;
+}
+
+.card-markdown-paragraph {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-fg-secondary;
+}
+
+.md-bold {
+    -fx-font-weight: bold;
+}
+
+.md-italic {
+    -fx-font-style: italic;
+}
+
+.md-code {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+    -fx-padding: 0 4px;
+    -fx-background-radius: 4px;
+}
+
+.card-markdown-codeblock {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-background-color: #f8fafc;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 10px;
+}
+
+.md-link {
+    -fx-text-fill: #2563eb;
+    -fx-underline: true;
+    -fx-cursor: hand;
+}
+
+.md-bullet {
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
+}
+
+.md-blockquote {
+    -fx-background-color: #f8fafc;
+    -fx-border-width: 0 0 0 3;
+    -fx-border-color: #94a3b8;
+    -fx-background-radius: 0 8px 8px 0;
+    -fx-padding: 6px 10px;
+}
+
+.md-table {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 6px 10px;
+}
+
+.md-table-header {
+    -fx-font-weight: bold;
+    -fx-background-color: #f1f5f9;
+    -fx-padding: 2px 6px;
+}

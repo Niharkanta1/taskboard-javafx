@@ -2,8 +2,6 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -12,23 +10,19 @@
             xmlns:fx="http://javafx.com/fxml/1">
 
     <top>
-        <Label fx:id="titleLabel" styleClass="dialog-title" text="Create Workspace" />
+        <Label fx:id="titleLabel" styleClass="dialog-title" text="Delete" />
     </top>
 
     <center>
         <VBox styleClass="workspace-dialog" spacing="10">
-            <Label styleClass="form-label" text="Name" />
-            <TextField fx:id="nameField" promptText="Workspace name" />
-            <Label styleClass="form-label" text="Description" />
-            <TextArea fx:id="descriptionField" promptText="Optional description" prefRowCount="4" />
-            <Label fx:id="errorLabel" styleClass="dialog-error" text="" wrapText="true" />
+            <Label fx:id="messageLabel" wrapText="true" text="" />
         </VBox>
     </center>
 
     <bottom>
         <HBox styleClass="dialog-actions" spacing="8" alignment="CENTER_RIGHT">
             <Button fx:id="cancelButton" styleClass="dialog-cancel" text="Cancel" onAction="#onCancel" />
-            <Button fx:id="saveButton" styleClass="dialog-save" text="Save" onAction="#onSave" />
+            <Button fx:id="deleteButton" styleClass="dialog-delete" text="Delete" onAction="#onDelete" />
         </HBox>
     </bottom>
 

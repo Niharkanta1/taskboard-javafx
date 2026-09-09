@@ -12,13 +12,13 @@
             xmlns:fx="http://javafx.com/fxml/1">
 
     <top>
-        <Label fx:id="titleLabel" styleClass="dialog-title" text="Create Workspace" />
+        <Label fx:id="titleLabel" styleClass="dialog-title" text="Create Board" />
     </top>
 
     <center>
-        <VBox styleClass="workspace-dialog" spacing="10">
+        <VBox styleClass="workspace-dialog" spacing="8">
             <Label styleClass="form-label" text="Name" />
-            <TextField fx:id="nameField" promptText="Workspace name" />
+            <TextField fx:id="nameField" promptText="Board name" />
             <Label styleClass="form-label" text="Description" />
             <TextArea fx:id="descriptionField" promptText="Optional description" prefRowCount="4" />
             <Label fx:id="errorLabel" styleClass="dialog-error" text="" wrapText="true" />

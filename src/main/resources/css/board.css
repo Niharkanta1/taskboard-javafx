@@ -1,0 +1,99 @@
+/* Board view styles (Phase 4: kanban columns) */
+
+.board-header {
+    -fx-background-color: -app-surface;
+    -fx-padding: 16px 24px 12px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -app-border;
+}
+
+.board-workspace {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-fg-muted;
+}
+
+.board-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
+}
+
+.board-scroll {
+    -fx-background-color: -app-bg;
+}
+
+.board-columns {
+    -fx-padding: 16px;
+}
+
+.board-column {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 12px;
+    -fx-padding: 12px;
+    -fx-min-width: 280px;
+    -fx-pref-width: 280px;
+}
+
+/* Thin vertical line separating the kanban columns */
+.board-divider {
+    -fx-min-width: 1px;
+    -fx-pref-width: 1px;
+    -fx-max-width: 1px;
+    -fx-background-color: -app-border;
+}
+
+.board-column-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.board-column-header-row {
+    -fx-padding: 0 0 4px 0;
+}
+
+/* Per-column status accent colors */
+.col-planned .board-column-header {
+    -fx-text-fill: #64748b;
+}
+
+.col-in-progress .board-column-header {
+    -fx-text-fill: #b45309;
+}
+
+.col-completed .board-column-header {
+    -fx-text-fill: #15803d;
+}
+
+.col-closed .board-column-header {
+    -fx-text-fill: #475569;
+}
+
+.board-footer {
+    -fx-background-color: -app-surface;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: -app-border;
+    -fx-padding: 10px 24px;
+}
+
+/* Workspace view (board list) */
+
+.workspace-view-title {
+    -fx-background-color: -app-surface;
+    -fx-text-fill: -app-fg;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px 20px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -app-border;
+}
+
+.workspace-view {
+    -fx-padding: 24px;
+}
+
+.workspace-view-footer {
+    -fx-background-color: -app-surface;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: -app-border;
+    -fx-padding: 10px 24px;
+}

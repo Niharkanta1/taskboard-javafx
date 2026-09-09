@@ -16,5 +16,9 @@ public interface CardRepository {
 
     List<Card> findByBoard(long boardId);
 
+    Card update(Card card);
+
+    int delete(long id);
+
     long count();
 }
