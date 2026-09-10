@@ -2,6 +2,8 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.ScrollPane?>
@@ -13,6 +15,12 @@
 
     <top>
         <VBox styleClass="board-header" spacing="4">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <ImageView fitHeight="24" fitWidth="24" preserveRatio="true">
+                    <image><Image url="/branding/boardly.png" /></image>
+                </ImageView>
+                <Label styleClass="board-brand" text="Boardly" />
+            </HBox>
             <Label fx:id="workspaceLabel" styleClass="board-workspace" text="" />
             <Label fx:id="boardLabel" styleClass="board-title" text="" />
         </VBox>

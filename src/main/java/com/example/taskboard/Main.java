@@ -28,6 +28,7 @@ import com.example.taskboard.util.GlobalErrorHandler;
 
 import javafx.application.Application;
 import javafx.application.HostServices;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         logger.info("Starting {} v{}", AppConfig.APP_NAME, AppConfig.APP_VERSION);
+        stage.getIcons().add(new Image(getClass().getResourceAsStream(AppConfig.APP_LOGO)));
 
         StorageConfigService storageConfigService = new StorageConfigService();
         storageConfigService.load();

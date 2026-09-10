@@ -12,6 +12,12 @@
     -fx-text-fill: -app-fg-muted;
 }
 
+.board-brand {
+    -fx-text-fill: -app-surface;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
 .board-title {
     -fx-font-size: 20px;
     -fx-font-weight: bold;

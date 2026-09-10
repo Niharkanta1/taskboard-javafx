@@ -34,7 +34,7 @@ public final class GlobalErrorHandler implements Thread.UncaughtExceptionHandler
             }
             try {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("TaskBoard");
+                alert.setTitle("Boardly");
                 alert.setHeaderText("TaskBoard encountered an unexpected error.");
                 alert.setContentText("Please try again. If the problem continues, review the application log.");
                 alert.showAndWait();

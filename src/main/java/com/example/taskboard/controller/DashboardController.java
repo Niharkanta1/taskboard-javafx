@@ -173,7 +173,7 @@ public class DashboardController {
 
     private void showFailure(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("TaskBoard");
+        alert.setTitle("Boardly");
         alert.setHeaderText(message);
         alert.showAndWait();
     }
@@ -189,12 +189,16 @@ public class DashboardController {
                 } else {
                     Label nameLabel = new Label(workspace.getName());
                     nameLabel.getStyleClass().add("workspace-item-name");
+                    nameLabel.setMaxWidth(Double.MAX_VALUE);
+                    nameLabel.setWrapText(true);
                     VBox box = new VBox(2, nameLabel);
+                    box.setMaxWidth(Double.MAX_VALUE);
                     String description = workspace.getDescription();
                     if (description != null && !description.isBlank()) {
                         Label descriptionLabel = new Label(description);
                         descriptionLabel.getStyleClass().add("workspace-item-description");
                         descriptionLabel.setWrapText(true);
+                        descriptionLabel.setMaxWidth(Double.MAX_VALUE);
                         box.getChildren().add(descriptionLabel);
                     }
                     setGraphic(box);

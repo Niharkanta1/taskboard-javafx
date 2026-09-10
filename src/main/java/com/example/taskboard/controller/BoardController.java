@@ -216,7 +216,7 @@ public class BoardController {
 
     private void showFailure(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("TaskBoard");
+        alert.setTitle("Boardly");
         alert.setHeaderText(message);
         alert.showAndWait();
     }

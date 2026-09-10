@@ -1,6 +1,6 @@
-# TaskBoard — Desktop Trello-like Task Manager (JavaFX)
+# Boardly — Desktop Trello-like Task Manager (JavaFX)
 
-A desktop kanban/task management application built with **JavaFX** and **SQLite**, developed incrementally in verified phases.
+A modern desktop kanban/task management application built with **JavaFX** and **SQLite**, developed incrementally in verified phases.
 
 **Current status:** all planned application phases are complete, including boards, cards, due dates, Markdown, image attachments, drag-and-drop, and production hardening.
 
@@ -15,7 +15,14 @@ A desktop kanban/task management application built with **JavaFX** and **SQLite*
 - **Automated tests**: JUnit 5 unit and integration tests (57/57 passing)
 - **Graceful error handling**: friendly user-facing messages; real exceptions logged internally
 
-The dashboard's **Storage Settings** button selects the directory containing `taskboard.db` and `attachments/`. The setting is stored in `%USERPROFILE%\\.taskboard\\settings.properties` and takes effect after restarting the app.
+The starting screen's **Storage Settings** button selects the directory containing `taskboard.db` and `attachments/`. The setting is stored in `%USERPROFILE%\\.taskboard\\settings.properties` and takes effect after restarting the app.
+
+## Brand and Credits
+
+Boardly was created by **DeadWolf Software, Hyderabad**.
+
+Copyright (c) 2026 DeadWolf Software, Hyderabad. All rights reserved.
+See [licence.md](licence.md) for the project license and third-party notice.
 
 ## Technology
 
@@ -46,7 +53,7 @@ mvn clean test
 mvn javafx:run
 ```
 
-The app opens a login window.
+The app opens the Boardly user-selection window.
 
 ### 3. Build a portable Windows release
 
@@ -56,7 +63,7 @@ Prerequisite: a full JDK 21 installation with `jpackage` on `PATH`.
 mvn clean verify -Prelease
 ```
 
-The release profile creates `target/release/TaskBoard-1.0.0-windows.zip`. Extract it anywhere and run `TaskBoard/TaskBoard.exe`; no Java installation is required on the target machine.
+The release profile creates `target/release/Boardly-1.0.0-windows.zip`. Extract it anywhere and run `Boardly/Boardly.exe`; no Java installation is required on the target machine.
 
 ### 4. Log in
 

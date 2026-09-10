@@ -10,7 +10,7 @@ package com.example.taskboard.config;
  */
 public final class AppConfig {
 
-    public static final String APP_NAME = "TaskBoard";
+    public static final String APP_NAME = "Boardly";
     public static final String APP_VERSION = "0.0.1";
 
     public static final String LOGIN_FXML = "/fxml/Login.fxml";
@@ -29,9 +29,11 @@ public final class AppConfig {
     public static final String DASHBOARD_CSS = "/css/dashboard.css";
     public static final String BOARD_CSS = "/css/board.css";
     public static final String CARD_CSS = "/css/card.css";
+    public static final String APP_ICON = "/branding/boardly.ico";
+    public static final String APP_LOGO = "/branding/boardly.png";
 
-    public static final int DEFAULT_WINDOW_WIDTH = 600;
-    public static final int DEFAULT_WINDOW_HEIGHT = 400;
+    public static final int DEFAULT_WINDOW_WIDTH = 760;
+    public static final int DEFAULT_WINDOW_HEIGHT = 560;
 
     public static final int BOARD_WINDOW_WIDTH = 1100;
     public static final int BOARD_WINDOW_HEIGHT = 650;

@@ -1,13 +1,20 @@
 /* Dashboard styles (Phase 3: workspace list + management + dialog) */
 
 .dashboard {
-    -fx-padding: 24px;
+    -fx-padding: 28px;
+    -fx-background-color: -app-bg;
 }
 
 .dashboard-welcome {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: -app-fg;
+}
+
+.dashboard-credit {
+    -fx-padding: 14px 0 0 0;
+    -fx-text-fill: -app-fg-muted;
+    -fx-font-size: 11px;
 }
 
 .dashboard-section-title {
@@ -22,12 +29,18 @@
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-padding: 6px;
+    -fx-min-height: 220px;
+    -fx-pref-width: 100%;
 }
 
 .workspace-list .list-cell {
     -fx-background-color: transparent;
     -fx-background-radius: 8px;
     -fx-padding: 10px 14px;
+}
+
+.workspace-list .list-cell > .list-cell {
+    -fx-pref-width: 100%;
 }
 
 .workspace-list .list-cell:hover {

@@ -58,7 +58,7 @@ public class StorageConfigController {
             }
             storageConfigService.save(Path.of(value));
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("TaskBoard");
+            alert.setTitle("Boardly");
             alert.setHeaderText("Storage location saved");
             alert.setContentText("Restart TaskBoard for the new database and attachments location to take effect.");
             alert.showAndWait();

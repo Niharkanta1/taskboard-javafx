@@ -1,32 +1,45 @@
-/* TaskBoard - global application styles (modern light theme) */
+/* Boardly - global application styles */
 
 .root {
-    -app-bg: #f7f8fa;
-    -app-surface: #ffffff;
-    -app-border: #e2e8f0;
-    -app-fg: #0f172a;
-    -app-fg-secondary: #475569;
-    -app-fg-muted: #64748b;
-    -app-accent: #2563eb;
-    -app-accent-hover: #1d4ed8;
-    -app-accent-pressed: #1e40af;
-    -app-danger: #dc2626;
+    -app-bg: #f4f1ea;
+    -app-surface: #fffdf8;
+    -app-border: #ded8cc;
+    -app-fg: #202a2b;
+    -app-fg-secondary: #53605f;
+    -app-fg-muted: #7b8581;
+    -app-accent: #0f766e;
+    -app-accent-hover: #0d625c;
+    -app-accent-pressed: #094d49;
+    -app-danger: #c2413b;
 
     -fx-background-color: -app-bg;
     -fx-text-fill: -app-fg;
-    -fx-font-family: "Segoe UI";
+    -fx-font-family: "Aptos";
     -fx-font-size: 13px;
 }
 
 /* App header bar (login, dashboard, board, workspace views) */
-.app-title {
-    -fx-background-color: -app-surface;
-    -fx-text-fill: -app-fg;
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-padding: 14px 20px;
+.brand-header {
+    -fx-background-color: #202a2b;
+    -fx-padding: 10px 18px;
     -fx-border-width: 0 0 1 0;
-    -fx-border-color: -app-border;
+    -fx-border-color: #202a2b;
+}
+
+.brand-header .app-title {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.app-title {
+    -fx-background-color: #202a2b;
+    -fx-text-fill: #fffdf8;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-padding: 18px 24px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: #202a2b;
 }
 
 .app-status {

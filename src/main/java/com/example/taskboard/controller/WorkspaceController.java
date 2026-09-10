@@ -28,8 +28,10 @@ import java.util.List;
 /**
  * Workspace view: lists the boards of one workspace and opens them.
  *
- * <p>Board business rules live in {@link BoardService}; this controller
- * only handles the view and user interaction. Styling is in CSS.</p>
+ * <p>
+ * Board business rules live in {@link BoardService}; this controller
+ * only handles the view and user interaction. Styling is in CSS.
+ * </p>
  */
 public class WorkspaceController {
 
@@ -49,8 +51,8 @@ public class WorkspaceController {
     private Label emptyHint;
 
     public WorkspaceController(Workspace workspace,
-                              BoardService boardService,
-                              NavigationService navigationService) {
+            BoardService boardService,
+            NavigationService navigationService) {
         this.workspace = workspace;
         this.boardService = boardService;
         this.navigationService = navigationService;
@@ -150,7 +152,7 @@ public class WorkspaceController {
 
     private void showFailure(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("TaskBoard");
+        alert.setTitle("Boardly");
         alert.setHeaderText(message);
         alert.showAndWait();
     }
@@ -166,12 +168,16 @@ public class WorkspaceController {
                 } else {
                     Label nameLabel = new Label(board.getName());
                     nameLabel.getStyleClass().add("workspace-item-name");
+                    nameLabel.setMaxWidth(Double.MAX_VALUE);
+                    nameLabel.setWrapText(true);
                     VBox box = new VBox(2, nameLabel);
+                    box.setMaxWidth(Double.MAX_VALUE);
                     String description = board.getDescription();
                     if (description != null && !description.isBlank()) {
                         Label descriptionLabel = new Label(description);
                         descriptionLabel.getStyleClass().add("workspace-item-description");
                         descriptionLabel.setWrapText(true);
+                        descriptionLabel.setMaxWidth(Double.MAX_VALUE);
                         box.getChildren().add(descriptionLabel);
                     }
                     setGraphic(box);

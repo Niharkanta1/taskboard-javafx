@@ -9,6 +9,38 @@
     -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 12, 0, 0, 0);
 }
 
+.start-form {
+    -fx-min-width: 480px;
+    -fx-max-width: 540px;
+}
+
+.user-list {
+    -fx-min-width: 380px;
+    -fx-pref-width: 380px;
+    -fx-max-width: 440px;
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 6px;
+}
+
+.user-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 12px 16px;
+    -fx-font-size: 14px;
+    -fx-text-fill: -app-fg;
+}
+
+.user-list .list-cell:hover {
+    -fx-background-color: #e3f1ee;
+}
+
+.user-list .list-cell:selected {
+    -fx-background-color: -app-accent;
+    -fx-text-fill: white;
+}
+
 .login-label {
     -fx-font-size: 13px;
     -fx-text-fill: -app-fg-secondary;
@@ -17,4 +49,10 @@
 .login-error {
     -fx-text-fill: #b91c1c;
     -fx-font-size: 13px;
+}
+
+.start-credit {
+    -fx-text-fill: -app-fg-muted;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 0 0 0;
 }

@@ -171,8 +171,8 @@
                                 <goals><goal>run</goal></goals>
                                 <configuration>
                                     <target>
-                                        <zip destfile="${release.output}/TaskBoard-${release.version}-windows.zip">
-                                            <zipfileset dir="${release.output}/TaskBoard" prefix="TaskBoard" />
+                                        <zip destfile="${release.output}/Boardly-${release.version}-windows.zip">
+                                            <zipfileset dir="${release.output}/Boardly" prefix="Boardly" />
                                         </zip>
                                     </target>
                                 </configuration>
@@ -192,14 +192,15 @@
                                     <executable>jpackage</executable>
                                     <arguments>
                                         <argument>--type</argument><argument>app-image</argument>
-                                        <argument>--name</argument><argument>TaskBoard</argument>
+                                        <argument>--name</argument><argument>Boardly</argument>
                                         <argument>--app-version</argument><argument>${release.version}</argument>
                                         <argument>--input</argument><argument>${release.input}</argument>
                                         <argument>--main-jar</argument><argument>${project.build.finalName}.jar</argument>
                                         <argument>--main-class</argument><argument>com.example.taskboard.Launcher</argument>
                                         <argument>--dest</argument><argument>${release.output}</argument>
                                         <argument>--vendor</argument><argument>TaskBoard</argument>
-                                        <argument>--description</argument><argument>TaskBoard desktop task manager</argument>
+                                        <argument>--description</argument><argument>Boardly desktop task manager</argument>
+                                        <argument>--icon</argument><argument>${project.basedir}/src/main/resources/branding/boardly.ico</argument>
                                         <argument>--java-options</argument><argument>-Dtaskboard.release=true</argument>
                                     </arguments>
                                 </configuration>
