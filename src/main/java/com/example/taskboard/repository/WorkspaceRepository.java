@@ -4,6 +4,7 @@ import com.example.taskboard.model.Workspace;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Data access for workspaces.
@@ -17,6 +18,14 @@ public interface WorkspaceRepository {
     Optional<Workspace> findById(long id);
 
     List<Workspace> findAll();
+
+    default List<Workspace> findAllByOwner(long ownerUserId) {
+        return findAll().stream().filter(workspace -> workspace.getOwnerUserId() == ownerUserId).toList();
+    }
+
+    default Optional<Workspace> findByIdAndOwner(long id, long ownerUserId) {
+        return findById(id).filter(workspace -> workspace.getOwnerUserId() == ownerUserId);
+    }
 
     long count();
 

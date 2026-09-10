@@ -2,7 +2,7 @@
 
 A desktop kanban/task management application built with **JavaFX** and **SQLite**, developed incrementally in verified phases.
 
-**Current status:** login, session management, and full workspace CRUD are implemented (Phases 0–3). Boards, cards, due dates, Markdown, and image attachments are planned in later phases.
+**Current status:** all planned application phases are complete, including boards, cards, due dates, Markdown, image attachments, drag-and-drop, and production hardening.
 
 ## Features
 
@@ -15,20 +15,20 @@ A desktop kanban/task management application built with **JavaFX** and **SQLite*
 - **Automated tests**: JUnit 5 unit and integration tests (57/57 passing)
 - **Graceful error handling**: friendly user-facing messages; real exceptions logged internally
 
-Planned next: Kanban boards with status columns (Planned / In Progress / Completed / Closed), card CRUD, due dates, Markdown descriptions, and image attachments.
+The dashboard's **Storage Settings** button selects the directory containing `taskboard.db` and `attachments/`. The setting is stored in `%USERPROFILE%\\.taskboard\\settings.properties` and takes effect after restarting the app.
 
 ## Technology
 
-| Area | Technology |
-|---|---|
-| Language / runtime | Java 21 |
-| Build | Maven (`javafx-maven-plugin` for zero-setup runs) |
-| UI | JavaFX 21.0.2, FXML, CSS |
-| Database | SQLite (sqlite-jdbc 3.46.0.0), JDBC |
-| Migrations | Flyway 9.22.3 |
-| Logging | SLF4J 2.0.13 + Logback 1.5.6 |
-| Password hashing | BCrypt (jbcrypt 0.4) |
-| Testing | JUnit 5 (5.10.2) |
+| Area               | Technology                                        |
+| ------------------ | ------------------------------------------------- |
+| Language / runtime | Java 21                                           |
+| Build              | Maven (`javafx-maven-plugin` for zero-setup runs) |
+| UI                 | JavaFX 21.0.2, FXML, CSS                          |
+| Database           | SQLite (sqlite-jdbc 3.46.0.0), JDBC               |
+| Migrations         | Flyway 9.22.3                                     |
+| Logging            | SLF4J 2.0.13 + Logback 1.5.6                      |
+| Password hashing   | BCrypt (jbcrypt 0.4)                              |
+| Testing            | JUnit 5 (5.10.2)                                  |
 
 ## Getting Started
 
@@ -48,7 +48,17 @@ mvn javafx:run
 
 The app opens a login window.
 
-### 3. Log in
+### 3. Build a portable Windows release
+
+Prerequisite: a full JDK 21 installation with `jpackage` on `PATH`.
+
+```bash
+mvn clean verify -Prelease
+```
+
+The release profile creates `target/release/TaskBoard-1.0.0-windows.zip`. Extract it anywhere and run `TaskBoard/TaskBoard.exe`; no Java installation is required on the target machine.
+
+### 4. Log in
 
 A development user is created automatically on first start:
 
@@ -57,9 +67,11 @@ A development user is created automatically on first start:
 
 (For a different dev password, set the environment variable `TASKBOARD_DEV_PASSWORD` before running.)
 
-Enter the username and password, then click **Log In**. You land on the dashboard, which shows the current user and the list of workspaces.
+If you do not know the development credentials, click **Create User** on the starting login screen. Choose a username and password, then return to login with the new account. The same starting screen also contains **Storage Settings**, where you can select the database and attachments directory before logging in.
 
-### 4. Work with workspaces
+The first screen lists all locally registered usernames. Select one and click **Continue** to open the login screen with that username prefilled. Enter the password and click **Login** to reach the dashboard and workspace list.
+
+### 5. Work with workspaces
 
 1. Click **Create Workspace**, enter a name (required, max 100 chars) and an optional description (max 500 chars), then click **Save**.
 2. Select a workspace in the list to **Edit** it.
@@ -67,13 +79,14 @@ Enter the username and password, then click **Log In**. You land on the dashboar
 
 Workspaces persist across restarts.
 
-### 5. Where the data lives
+### 6. Where the data lives
 
-| Item | Location |
-|---|---|
-| Database file | `data/taskboard.db` (created automatically on first run) |
-| Log file | `logs/taskboard.log` |
-| Migrations | `src/main/resources/db/migration/` |
+| Item          | Location                                               |
+| ------------- | ------------------------------------------------------ |
+| Database file | Configured data directory, default `data/taskboard.db` |
+| Attachments   | Configured data directory, `attachments/`              |
+| Log file      | `logs/taskboard.log`                                   |
+| Migrations    | `src/main/resources/db/migration/`                     |
 
 ## Project Layout
 

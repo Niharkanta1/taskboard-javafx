@@ -29,9 +29,11 @@ import java.util.List;
 /**
  * Dashboard: shows the signed-in user and manages workspaces.
  *
- * <p>Workspace business rules live in {@link WorkspaceService}; this
+ * <p>
+ * Workspace business rules live in {@link WorkspaceService}; this
  * controller only handles the view and user interaction. Styling is
- * in CSS.</p>
+ * in CSS.
+ * </p>
  */
 public class DashboardController {
 
@@ -66,8 +68,8 @@ public class DashboardController {
     private Button logoutButton;
 
     public DashboardController(SessionManager sessionManager,
-                              WorkspaceService workspaceService,
-                              NavigationService navigationService) {
+            WorkspaceService workspaceService,
+            NavigationService navigationService) {
         this.sessionManager = sessionManager;
         this.workspaceService = workspaceService;
         this.navigationService = navigationService;
@@ -75,8 +77,7 @@ public class DashboardController {
 
     @FXML
     private void initialize() {
-        sessionManager.getCurrentUser().ifPresent(user ->
-                welcomeLabel.setText("Logged in as: " + user.getUsername()));
+        sessionManager.getCurrentUser().ifPresent(user -> welcomeLabel.setText("Logged in as: " + user.getUsername()));
         workspaceList.setCellFactory(lv -> workspaceCellFactory());
         refreshWorkspaces();
     }
@@ -125,7 +126,8 @@ public class DashboardController {
         }
 
         try {
-            workspaceService.delete(selected.getId());
+            long userId = sessionManager.getCurrentUser().orElseThrow().getId();
+            workspaceService.deleteForUser(userId, selected.getId());
             refreshWorkspaces();
         } catch (AppException e) {
             logger.error("Failed to delete workspace", e);
@@ -136,7 +138,8 @@ public class DashboardController {
     private void refreshWorkspaces() {
         List<Workspace> workspaces;
         try {
-            workspaces = workspaceService.findAll();
+            long userId = sessionManager.getCurrentUser().orElseThrow().getId();
+            workspaces = workspaceService.findAllForUser(userId);
         } catch (AppException e) {
             logger.error("Failed to load workspaces", e);
             workspaces = List.of();
@@ -150,7 +153,8 @@ public class DashboardController {
             FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.WORKSPACE_DIALOG_FXML));
             Stage dialogStage = new Stage();
             WorkspaceDialogController controller = new WorkspaceDialogController(
-                    workspaceService, existing, this::refreshWorkspaces, dialogStage);
+                    workspaceService, existing, this::refreshWorkspaces, dialogStage,
+                    sessionManager.getCurrentUser().orElseThrow().getId());
             loader.setController(controller);
             Parent root = loader.load();
             Scene scene = new Scene(root, AppConfig.WORKSPACE_DIALOG_WIDTH, AppConfig.WORKSPACE_DIALOG_HEIGHT);

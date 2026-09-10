@@ -34,35 +34,56 @@
     -fx-text-fill: -app-fg-secondary;
 }
 
-/* Primary buttons */
-.login-button, .dashboard-button, .dialog-save {
-    -fx-background-color: -app-accent;
-    -fx-text-fill: white;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-background-radius: 8px;
-    -fx-padding: 8px 18px;
-    -fx-cursor: hand;
-}
-
-.login-button:hover, .dashboard-button:hover, .dialog-save:hover {
-    -fx-background-color: -app-accent-hover;
-}
-
-.login-button:pressed, .dashboard-button:pressed, .dialog-save:pressed {
-    -fx-background-color: -app-accent-pressed;
-}
-
-/* Secondary buttons */
-.new-card-button, .mode-button, .dialog-cancel {
+/* Unified button geometry and interaction states. */
+.button {
     -fx-background-color: -app-surface;
     -fx-border-color: -app-border;
+    -fx-border-width: 1px;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
     -fx-text-fill: -app-fg-secondary;
     -fx-font-size: 13px;
-    -fx-padding: 6px 14px;
+    -fx-padding: 8px 14px;
     -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #cbd5e1;
+}
+
+.button:pressed {
+    -fx-background-color: #e2e8f0;
+}
+
+.button:disabled {
+    -fx-opacity: 0.55;
+    -fx-cursor: default;
+}
+
+/* Primary buttons */
+.login-button, .dashboard-button, .dialog-save {
+    -fx-background-color: -app-accent;
+    -fx-border-color: -app-accent;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 18px;
+}
+
+.login-button:hover, .dashboard-button:hover, .dialog-save:hover {
+    -fx-background-color: -app-accent-hover;
+    -fx-border-color: -app-accent-hover;
+}
+
+.login-button:pressed, .dashboard-button:pressed, .dialog-save:pressed {
+    -fx-background-color: -app-accent-pressed;
+    -fx-border-color: -app-accent-pressed;
+}
+
+/* Secondary buttons */
+.new-card-button, .mode-button, .dialog-cancel {
+    -fx-padding: 6px 14px;
 }
 
 .new-card-button:hover, .dialog-cancel:hover {
@@ -86,16 +107,16 @@
 /* Danger button */
 .dialog-delete {
     -fx-background-color: -app-danger;
+    -fx-border-color: -app-danger;
     -fx-text-fill: white;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-background-radius: 8px;
     -fx-padding: 8px 18px;
-    -fx-cursor: hand;
 }
 
 .dialog-delete:hover {
     -fx-background-color: #b91c1c;
+    -fx-border-color: #b91c1c;
 }
 
 /* Dialog styles (shared across all modal dialogs) */

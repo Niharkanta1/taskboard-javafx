@@ -8,6 +8,7 @@ import java.time.Instant;
 public class Workspace {
 
     private long id;
+    private long ownerUserId;
     private String name;
     private String description;
     private Instant createdAt;
@@ -22,6 +23,19 @@ public class Workspace {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public Workspace(long ownerUserId, String name, String description) {
+        this(name, description);
+        this.ownerUserId = ownerUserId;
+    }
+
+    public long getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(long ownerUserId) {
+        this.ownerUserId = ownerUserId;
     }
 
     public long getId() {

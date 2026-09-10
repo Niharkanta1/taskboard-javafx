@@ -18,9 +18,27 @@ public final class AppPaths {
     public static final String LOGS_DIR = "logs";
     public static final String ATTACHMENTS_DIR = "attachments";
 
-    public static final Path DATABASE_PATH = Paths.get(DATA_DIR, DATABASE_FILE);
-    public static final Path ATTACHMENTS_PATH = Paths.get(DATA_DIR, ATTACHMENTS_DIR);
+    private static Path dataDirectory = Paths.get(DATA_DIR).toAbsolutePath().normalize();
 
     private AppPaths() {
+    }
+
+    public static synchronized void configureDataDirectory(Path directory) {
+        if (directory == null) {
+            throw new IllegalArgumentException("Data directory cannot be null");
+        }
+        dataDirectory = directory.toAbsolutePath().normalize();
+    }
+
+    public static synchronized Path getDataDirectory() {
+        return dataDirectory;
+    }
+
+    public static synchronized Path getDatabasePath() {
+        return dataDirectory.resolve(DATABASE_FILE);
+    }
+
+    public static synchronized Path getAttachmentsPath() {
+        return dataDirectory.resolve(ATTACHMENTS_DIR);
     }
 }

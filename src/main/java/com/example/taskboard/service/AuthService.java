@@ -3,6 +3,8 @@ package com.example.taskboard.service;
 import org.mindrot.jbcrypt.BCrypt;
 
 import com.example.taskboard.exception.AuthenticationException;
+import com.example.taskboard.exception.AppException;
+import com.example.taskboard.exception.DatabaseException;
 import com.example.taskboard.exception.ValidationException;
 import com.example.taskboard.model.User;
 import com.example.taskboard.repository.UserRepository;
@@ -11,13 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Authentication service: validates credentials and verifies them against
  * the stored BCrypt hash.
  *
- * <p>Plaintext passwords are never compared directly against database
- * values, never stored and never logged.</p>
+ * <p>
+ * Plaintext passwords are never compared directly against database
+ * values, never stored and never logged.
+ * </p>
  */
 public class AuthService {
 
@@ -52,6 +57,26 @@ public class AuthService {
         }
         logger.info("User '{}' authenticated successfully", username);
         return user.get();
+    }
+
+    /** Creates a user with a BCrypt password hash; plaintext is never persisted. */
+    public User register(String username, String password, String confirmation) {
+        String normalizedUsername = validateRegistration(username, password, confirmation);
+        if (userRepository.findByUsername(normalizedUsername).isPresent()) {
+            throw new ValidationException("That username is already in use.");
+        }
+        try {
+            User user = new User(normalizedUsername, hashPassword(password));
+            User saved = userRepository.insert(user);
+            logger.info("Created user account '{}'", normalizedUsername);
+            return saved;
+        } catch (DatabaseException e) {
+            throw new AppException("Unable to create the user account.", e);
+        }
+    }
+
+    public List<String> findUsernames() {
+        return userRepository.findUsernames();
     }
 
     /**
@@ -89,5 +114,25 @@ public class AuthService {
         if (password == null || password.isBlank()) {
             throw new ValidationException("Password is required.");
         }
+    }
+
+    private String validateRegistration(String username, String password, String confirmation) {
+        if (username == null || username.isBlank()) {
+            throw new ValidationException("Username is required.");
+        }
+        String normalized = username.trim();
+        if (normalized.length() > 100) {
+            throw new ValidationException("Username must be at most 100 characters.");
+        }
+        if (password == null || password.isBlank()) {
+            throw new ValidationException("Password is required.");
+        }
+        if (password.length() < 8) {
+            throw new ValidationException("Password must be at least 8 characters.");
+        }
+        if (!password.equals(confirmation)) {
+            throw new ValidationException("Passwords do not match.");
+        }
+        return normalized;
     }
 }

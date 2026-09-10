@@ -104,6 +104,27 @@ class AuthServiceTest {
                 () -> authService.login("alice", "  "));
     }
 
+    @Test
+    void registerCreatesHashedUserThatCanLogIn() {
+        User created = authService.register("  new-user  ", "strong-pass", "strong-pass");
+
+        assertEquals("new-user", created.getUsername());
+        assertNotEquals("strong-pass", created.getPasswordHash());
+        assertEquals("new-user", authService.login("new-user", "strong-pass").getUsername());
+    }
+
+    @Test
+    void registerRejectsDuplicateAndMismatchedOrWeakCredentials() {
+        authService.register("new-user", "strong-pass", "strong-pass");
+
+        assertThrows(ValidationException.class,
+                () -> authService.register("new-user", "another-pass", "another-pass"));
+        assertThrows(ValidationException.class,
+                () -> authService.register("other-user", "short", "short"));
+        assertThrows(ValidationException.class,
+                () -> authService.register("other-user", "strong-pass", "different-pass"));
+    }
+
     /** Simple in-memory stand-in for UserRepository in unit tests. */
     private static final class FakeUserRepository implements UserRepository {
 

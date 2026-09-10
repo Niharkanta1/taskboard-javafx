@@ -3,8 +3,10 @@ package com.example.taskboard.config;
 /**
  * Basic, static application configuration.
  *
- * <p>Holds only non-sensitive, compile-time constants. No secrets are
- * stored here and nothing in this class is logged.</p>
+ * <p>
+ * Holds only non-sensitive, compile-time constants. No secrets are
+ * stored here and nothing in this class is logged.
+ * </p>
  */
 public final class AppConfig {
 
@@ -19,6 +21,9 @@ public final class AppConfig {
     public static final String BOARD_DIALOG_FXML = "/fxml/BoardDialog.fxml";
     public static final String CARD_DIALOG_FXML = "/fxml/CardDialog.fxml";
     public static final String DELETE_DIALOG_FXML = "/fxml/DeleteDialog.fxml";
+    public static final String STORAGE_CONFIG_FXML = "/fxml/StorageConfig.fxml";
+    public static final String CREATE_USER_FXML = "/fxml/CreateUser.fxml";
+    public static final String START_FXML = "/fxml/Start.fxml";
     public static final String APP_CSS = "/css/app.css";
     public static final String LOGIN_CSS = "/css/login.css";
     public static final String DASHBOARD_CSS = "/css/dashboard.css";

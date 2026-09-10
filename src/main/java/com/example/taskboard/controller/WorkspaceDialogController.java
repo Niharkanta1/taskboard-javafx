@@ -17,8 +17,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Modal dialog for creating or editing a workspace.
  *
- * <p>Validation and persistence are delegated to {@link WorkspaceService};
- * the dialog only reports friendly messages for failures.</p>
+ * <p>
+ * Validation and persistence are delegated to {@link WorkspaceService};
+ * the dialog only reports friendly messages for failures.
+ * </p>
  */
 public class WorkspaceDialogController {
 
@@ -28,6 +30,7 @@ public class WorkspaceDialogController {
     private final Workspace existing;
     private final Runnable onSaved;
     private final Stage stage;
+    private final long ownerUserId;
 
     @FXML
     private Label titleLabel;
@@ -42,13 +45,15 @@ public class WorkspaceDialogController {
     private Label errorLabel;
 
     public WorkspaceDialogController(WorkspaceService workspaceService,
-                                    Workspace existing,
-                                    Runnable onSaved,
-                                    Stage stage) {
+            Workspace existing,
+            Runnable onSaved,
+            Stage stage,
+            long ownerUserId) {
         this.workspaceService = workspaceService;
         this.existing = existing;
         this.onSaved = onSaved;
         this.stage = stage;
+        this.ownerUserId = ownerUserId;
     }
 
     @FXML
@@ -70,9 +75,9 @@ public class WorkspaceDialogController {
 
         try {
             if (existing == null) {
-                workspaceService.create(name, description);
+                workspaceService.createForUser(ownerUserId, name, description);
             } else {
-                workspaceService.update(existing.getId(), name, description);
+                workspaceService.updateForUser(ownerUserId, existing.getId(), name, description);
             }
             stage.close();
             if (onSaved != null) {

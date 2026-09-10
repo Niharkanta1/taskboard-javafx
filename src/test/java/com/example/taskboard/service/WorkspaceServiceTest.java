@@ -129,6 +129,20 @@ class WorkspaceServiceTest {
         assertEquals(2, all.size());
     }
 
+    @Test
+    void ownedWorkspaceQueriesIsolateUsers() {
+        Workspace nihar = service.createForUser(1L, "Nihar workspace", null);
+        Workspace dev = service.createForUser(2L, "Dev workspace", null);
+
+        assertEquals(List.of(nihar.getId()), service.findAllForUser(1L).stream()
+                .map(Workspace::getId).toList());
+        assertEquals(List.of(dev.getId()), service.findAllForUser(2L).stream()
+                .map(Workspace::getId).toList());
+        assertThrows(ValidationException.class,
+                () -> service.updateForUser(2L, nihar.getId(), "Hijacked", null));
+        assertFalse(service.deleteForUser(2L, nihar.getId()));
+    }
+
     /** Simple in-memory stand-in for WorkspaceRepository in unit tests. */
     private static final class FakeWorkspaceRepository implements WorkspaceRepository {
 

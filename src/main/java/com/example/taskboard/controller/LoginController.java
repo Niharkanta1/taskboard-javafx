@@ -20,9 +20,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Login screen controller.
  *
- * <p>Handles the login form and shows friendly error messages. Business
+ * <p>
+ * Handles the login form and shows friendly error messages. Business
  * rules live in {@link AuthService}; no SQL or password logic is
- * duplicated here.</p>
+ * duplicated here.
+ * </p>
  */
 public class LoginController {
 
@@ -31,6 +33,7 @@ public class LoginController {
     private final AuthService authService;
     private final SessionManager sessionManager;
     private final NavigationService navigationService;
+    private final String initialUsername;
 
     @FXML
     private TextField usernameField;
@@ -42,13 +45,28 @@ public class LoginController {
     private Button loginButton;
 
     @FXML
+    private Button userListButton;
+
+    @FXML
+    private Button storageButton;
+
+    @FXML
     private Label errorLabel;
 
     public LoginController(AuthService authService, SessionManager sessionManager,
-                           NavigationService navigationService) {
+            NavigationService navigationService, String initialUsername) {
         this.authService = authService;
         this.sessionManager = sessionManager;
         this.navigationService = navigationService;
+        this.initialUsername = initialUsername;
+    }
+
+    @FXML
+    private void initialize() {
+        if (initialUsername != null) {
+            usernameField.setText(initialUsername);
+            passwordField.requestFocus();
+        }
     }
 
     @FXML
@@ -66,6 +84,16 @@ public class LoginController {
             logger.error("Login failed due to an application error", e);
             showError("Unable to sign in. Please try again.");
         }
+    }
+
+    @FXML
+    private void onUserList() {
+        navigationService.showStart();
+    }
+
+    @FXML
+    private void onStorageSettings() {
+        navigationService.showStorageConfig();
     }
 
     private void showError(String message) {

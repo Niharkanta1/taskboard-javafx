@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1">
+    <center>
+        <VBox styleClass="workspace-dialog" spacing="10">
+            <Label styleClass="dialog-title" text="Storage Settings" />
+            <Label styleClass="form-label" text="Data and attachments directory" />
+            <HBox spacing="8">
+                <TextField fx:id="pathField" HBox.hgrow="ALWAYS" />
+                <Button styleClass="dialog-cancel" text="Browse..." onAction="#onBrowse" />
+            </HBox>
+            <Label styleClass="dialog-help" wrapText="true"
+                   text="The database and attachments folder will be stored here. Restart the app after saving." />
+            <Label fx:id="errorLabel" styleClass="dialog-error" wrapText="true" />
+        </VBox>
+    </center>
+    <bottom>
+        <HBox styleClass="dialog-actions" spacing="8" alignment="CENTER_RIGHT">
+            <Button styleClass="dialog-cancel" text="Cancel" onAction="#onCancel" />
+            <Button styleClass="dialog-save" text="Save" onAction="#onSave" defaultButton="true" />
+        </HBox>
+    </bottom>
+</BorderPane>

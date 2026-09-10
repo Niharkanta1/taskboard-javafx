@@ -18,10 +18,12 @@ import java.util.function.Function;
 /**
  * Owns the SQLite connection for the application.
  *
- * <p>Creates the data directory and database file on first start, enables
+ * <p>
+ * Creates the data directory and database file on first start, enables
  * foreign-key enforcement on the connection and runs Flyway migrations.
  * Multi-statement writes must go through {@link #inTransaction} so they
- * succeed or fail together.</p>
+ * succeed or fail together.
+ * </p>
  */
 public final class DatabaseManager implements AutoCloseable {
 
@@ -31,7 +33,7 @@ public final class DatabaseManager implements AutoCloseable {
     private Connection connection;
 
     public DatabaseManager() {
-        this(AppPaths.DATABASE_PATH);
+        this(AppPaths.getDatabasePath());
     }
 
     public DatabaseManager(Path databasePath) {

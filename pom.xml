@@ -119,4 +119,95 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <properties>
+                <release.version>1.0.0</release.version>
+                <release.input>${project.build.directory}/release-input</release.input>
+                <release.output>${project.build.directory}/release</release.output>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.7.0</version>
+                        <executions>
+                            <execution>
+                                <id>copy-release-dependencies</id>
+                                <phase>package</phase>
+                                <goals><goal>copy-dependencies</goal></goals>
+                                <configuration>
+                                    <outputDirectory>${release.input}</outputDirectory>
+                                    <includeScope>runtime</includeScope>
+                                    <excludeTransitive>false</excludeTransitive>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-release-input</id>
+                                <phase>package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${release.input}" />
+                                        <mkdir dir="${release.output}" />
+                                        <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                              todir="${release.input}" overwrite="true" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>zip-release-image</id>
+                                <phase>verify</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <zip destfile="${release.output}/TaskBoard-${release.version}-windows.zip">
+                                            <zipfileset dir="${release.output}/TaskBoard" prefix="TaskBoard" />
+                                        </zip>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>build-windows-app-image</id>
+                                <phase>package</phase>
+                                <goals><goal>exec</goal></goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument><argument>app-image</argument>
+                                        <argument>--name</argument><argument>TaskBoard</argument>
+                                        <argument>--app-version</argument><argument>${release.version}</argument>
+                                        <argument>--input</argument><argument>${release.input}</argument>
+                                        <argument>--main-jar</argument><argument>${project.build.finalName}.jar</argument>
+                                        <argument>--main-class</argument><argument>com.example.taskboard.Launcher</argument>
+                                        <argument>--dest</argument><argument>${release.output}</argument>
+                                        <argument>--vendor</argument><argument>TaskBoard</argument>
+                                        <argument>--description</argument><argument>TaskBoard desktop task manager</argument>
+                                        <argument>--java-options</argument><argument>-Dtaskboard.release=true</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

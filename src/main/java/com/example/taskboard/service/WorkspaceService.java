@@ -14,8 +14,10 @@ import java.util.Optional;
 /**
  * Workspace business rules: validation and CRUD operations.
  *
- * <p>Controllers call this service instead of touching the repository
- * directly, so validation and business rules stay in one place.</p>
+ * <p>
+ * Controllers call this service instead of touching the repository
+ * directly, so validation and business rules stay in one place.
+ * </p>
  */
 public class WorkspaceService {
 
@@ -44,6 +46,13 @@ public class WorkspaceService {
         return saved;
     }
 
+    public Workspace createForUser(long ownerUserId, String name, String description) {
+        Workspace workspace = new Workspace(ownerUserId, normalizeName(name), normalizeDescription(description));
+        Workspace saved = repository.insert(workspace);
+        logger.info("Created workspace '{}' (id={}, owner={})", saved.getName(), saved.getId(), ownerUserId);
+        return saved;
+    }
+
     /**
      * Updates an existing workspace.
      *
@@ -65,6 +74,15 @@ public class WorkspaceService {
         return saved;
     }
 
+    public Workspace updateForUser(long ownerUserId, long id, String name, String description) {
+        Workspace workspace = repository.findByIdAndOwner(id, ownerUserId)
+                .orElseThrow(() -> new ValidationException("Workspace not found."));
+        workspace.setName(normalizeName(name));
+        workspace.setDescription(normalizeDescription(description));
+        workspace.setUpdatedAt(Instant.now());
+        return repository.update(workspace);
+    }
+
     /**
      * Deletes a workspace. Foreign-key cascade removes its boards and cards.
      *
@@ -79,8 +97,16 @@ public class WorkspaceService {
         return deleted;
     }
 
+    public boolean deleteForUser(long ownerUserId, long id) {
+        return repository.findByIdAndOwner(id, ownerUserId).isPresent() && delete(id);
+    }
+
     public List<Workspace> findAll() {
         return repository.findAll();
+    }
+
+    public List<Workspace> findAllForUser(long ownerUserId) {
+        return repository.findAllByOwner(ownerUserId);
     }
 
     public Optional<Workspace> findById(long id) {

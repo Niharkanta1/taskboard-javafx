@@ -4,6 +4,9 @@ import com.example.taskboard.config.AppConfig;
 import com.example.taskboard.controller.BoardController;
 import com.example.taskboard.controller.DashboardController;
 import com.example.taskboard.controller.LoginController;
+import com.example.taskboard.controller.StorageConfigController;
+import com.example.taskboard.controller.CreateUserController;
+import com.example.taskboard.controller.StartController;
 import com.example.taskboard.controller.WorkspaceController;
 import com.example.taskboard.exception.AppException;
 import com.example.taskboard.model.Board;
@@ -44,12 +47,14 @@ public class NavigationService {
     private final DueDateService dueDateService;
     private final MarkdownService markdownService;
     private final HostServices hostServices;
+    private final StorageConfigService storageConfigService;
 
     public NavigationService(Stage stage, AuthService authService, SessionManager sessionManager,
             WorkspaceService workspaceService, BoardService boardService,
             CardService cardService, AttachmentService attachmentService,
             DueDateService dueDateService,
-            MarkdownService markdownService, HostServices hostServices) {
+            MarkdownService markdownService, HostServices hostServices,
+            StorageConfigService storageConfigService) {
         this.stage = stage;
         this.authService = authService;
         this.sessionManager = sessionManager;
@@ -60,6 +65,7 @@ public class NavigationService {
         this.dueDateService = dueDateService;
         this.markdownService = markdownService;
         this.hostServices = hostServices;
+        this.storageConfigService = storageConfigService;
     }
 
     /**
@@ -73,9 +79,20 @@ public class NavigationService {
      * Shows the login screen.
      */
     public void showLogin() {
+        showLogin(null);
+    }
+
+    public void showLogin(String username) {
         FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.LOGIN_FXML));
-        loader.setController(new LoginController(authService, sessionManager, this));
+        loader.setController(new LoginController(authService, sessionManager, this, username));
         Parent root = loadRoot(loader, AppConfig.LOGIN_FXML);
+        showScene(root, AppConfig.LOGIN_CSS);
+    }
+
+    public void showStart() {
+        FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.START_FXML));
+        loader.setController(new StartController(authService, this));
+        Parent root = loadRoot(loader, AppConfig.START_FXML);
         showScene(root, AppConfig.LOGIN_CSS);
     }
 
@@ -89,10 +106,52 @@ public class NavigationService {
         showScene(root, AppConfig.DASHBOARD_CSS);
     }
 
+    public void showStorageConfig() {
+        FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.STORAGE_CONFIG_FXML));
+        Stage dialogStage = new Stage();
+        loader.setController(new StorageConfigController(storageConfigService, dialogStage));
+        Parent root = loadRoot(loader, AppConfig.STORAGE_CONFIG_FXML);
+        Scene scene = new Scene(root, 620, 260);
+        scene.getStylesheets().add(resolveResource(AppConfig.APP_CSS).toExternalForm());
+        scene.getStylesheets().add(resolveResource(AppConfig.DASHBOARD_CSS).toExternalForm());
+        dialogStage.setTitle("Storage Settings");
+        dialogStage.setScene(scene);
+        dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        dialogStage.initOwner(stage);
+        dialogStage.showAndWait();
+    }
+
+    public void showCreateUser() {
+        showCreateUser(null);
+    }
+
+    public void showCreateUser(Runnable onCreated) {
+        FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.CREATE_USER_FXML));
+        Stage dialogStage = new Stage();
+        loader.setController(new CreateUserController(authService, dialogStage, onCreated));
+        Parent root = loadRoot(loader, AppConfig.CREATE_USER_FXML);
+        Scene scene = new Scene(root, 440, 430);
+        scene.getStylesheets().add(resolveResource(AppConfig.APP_CSS).toExternalForm());
+        scene.getStylesheets().add(resolveResource(AppConfig.LOGIN_CSS).toExternalForm());
+        dialogStage.setTitle("Create User");
+        dialogStage.setScene(scene);
+        dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        dialogStage.initOwner(stage);
+        dialogStage.showAndWait();
+    }
+
     /**
      * Shows the workspace view (board list) for the given workspace.
      */
     public void showWorkspace(Workspace workspace) {
+        long currentUserId = sessionManager.getCurrentUser()
+                .orElseThrow(() -> new AppException("No signed-in user."))
+                .getId();
+        if (workspace == null || workspace.getOwnerUserId() != currentUserId) {
+            logger.warn("Blocked workspace navigation for user {}", currentUserId);
+            showDashboard();
+            return;
+        }
         FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.WORKSPACE_FXML));
         loader.setController(new WorkspaceController(workspace, boardService, this));
         Parent root = loadRoot(loader, AppConfig.WORKSPACE_FXML);

@@ -7,6 +7,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml/1">
@@ -24,6 +25,10 @@
                 <PasswordField fx:id="passwordField" maxWidth="260" promptText="Password" />
                 <Button fx:id="loginButton" styleClass="login-button" text="Login" onAction="#onLogin" />
                 <Label fx:id="errorLabel" styleClass="login-error" text="" wrapText="true" maxWidth="260" />
+                <HBox spacing="8" alignment="CENTER">
+                    <Button fx:id="userListButton" styleClass="dashboard-button" text="User List" onAction="#onUserList" />
+                    <Button fx:id="storageButton" styleClass="dialog-cancel" text="Storage Settings" onAction="#onStorageSettings" />
+                </HBox>
             </VBox>
         </StackPane>
     </center>

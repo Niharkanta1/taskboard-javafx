@@ -22,6 +22,7 @@ import com.example.taskboard.service.DueDateService;
 import com.example.taskboard.service.MarkdownService;
 import com.example.taskboard.service.NavigationService;
 import com.example.taskboard.service.WorkspaceService;
+import com.example.taskboard.service.StorageConfigService;
 import com.example.taskboard.session.SessionManager;
 import com.example.taskboard.util.GlobalErrorHandler;
 
@@ -51,6 +52,9 @@ public class Main extends Application {
     public void start(Stage stage) throws Exception {
         logger.info("Starting {} v{}", AppConfig.APP_NAME, AppConfig.APP_VERSION);
 
+        StorageConfigService storageConfigService = new StorageConfigService();
+        storageConfigService.load();
+        AppPaths.configureDataDirectory(storageConfigService.getDataDirectory());
         databaseManager = new DatabaseManager();
         try {
             databaseManager.initialize();
@@ -68,18 +72,23 @@ public class Main extends Application {
         WorkspaceService workspaceService = new WorkspaceService(workspaceRepository);
         BoardService boardService = new BoardService(boardRepository, cardRepository, workspaceRepository);
         CardService cardService = new CardService(cardRepository, boardRepository);
-        AttachmentService attachmentService = new AttachmentService(AppPaths.ATTACHMENTS_PATH, attachmentRepository);
+        AttachmentService attachmentService = new AttachmentService(AppPaths.getAttachmentsPath(),
+                attachmentRepository);
         DueDateService dueDateService = new DueDateService();
         MarkdownService markdownService = new MarkdownService();
         HostServices hostServices = getHostServices();
         SessionManager sessionManager = new SessionManager();
         NavigationService navigationService = new NavigationService(stage, authService, sessionManager,
                 workspaceService, boardService, cardService, attachmentService, dueDateService,
-                markdownService, hostServices);
+                markdownService, hostServices, storageConfigService);
 
-        new DevUserBootstrap(userRepository, authService).ensureInitialUser();
+        if (Boolean.getBoolean("taskboard.release")) {
+            logger.info("Release mode enabled; development user bootstrap is disabled.");
+        } else {
+            new DevUserBootstrap(userRepository, authService).ensureInitialUser();
+        }
 
-        navigationService.showLogin();
+        navigationService.showStart();
 
         logger.info("Application started successfully.");
     }

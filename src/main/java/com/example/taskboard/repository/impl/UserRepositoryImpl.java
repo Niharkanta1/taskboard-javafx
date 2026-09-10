@@ -11,6 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserRepositoryImpl implements UserRepository {
 
@@ -65,6 +67,24 @@ public class UserRepositoryImpl implements UserRepository {
                 }
             } catch (SQLException e) {
                 throw new DatabaseException("Failed to find user by username", e);
+            }
+        });
+    }
+
+    @Override
+    public List<String> findUsernames() {
+        return databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT username FROM users ORDER BY username COLLATE NOCASE")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<String> usernames = new ArrayList<>();
+                    while (rs.next()) {
+                        usernames.add(rs.getString("username"));
+                    }
+                    return usernames;
+                }
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to list usernames", e);
             }
         });
     }
