@@ -4,6 +4,15 @@ A modern desktop kanban/task management application built with **JavaFX** and **
 
 **Current status:** all planned application phases are complete, including boards, cards, due dates, Markdown, image attachments, drag-and-drop, and production hardening.
 
+## Screenshots:
+<img width="756" height="591" alt="{4EBA475E-3AAB-4BB3-8F97-119E0C4938FD}" src="https://github.com/user-attachments/assets/8fe97060-f0f6-488a-87e1-8b25c1decf3f" />
+<img width="754" height="589" alt="{9AF2F317-5F14-4D1B-8815-4C66ECCC2561}" src="https://github.com/user-attachments/assets/73926ed0-a883-488c-bb2a-3f0b8063131a" />
+<img width="757" height="587" alt="{656B0251-6561-4619-975B-7CBDEBD8FBC6}" src="https://github.com/user-attachments/assets/73ee5c4e-a9fa-438b-94fa-1bb61f930087" />
+<img width="761" height="589" alt="{8ABAA6D9-FBE9-49F8-8A23-62A22C8B4AB0}" src="https://github.com/user-attachments/assets/696b1add-b7f6-4b40-8617-b05feb5dce17" />
+<img width="1097" height="680" alt="{948AC61B-8D94-4131-920C-D757967E2E29}" src="https://github.com/user-attachments/assets/7b2ddbd2-7753-4462-8dcc-63ab4235ee94" />
+<img width="714" height="584" alt="{907AD7E3-5508-469E-92A7-0103A33DE602}" src="https://github.com/user-attachments/assets/2813e92c-b5d3-4979-9fd7-44775a245e51" />
+<img width="713" height="578" alt="{BEBDC0B5-F764-4402-A190-D63D58FDC1F8}" src="https://github.com/user-attachments/assets/3f5382a4-f938-40dd-bf9b-043185e67c14" />
+
 ## Features
 
 - **User login** with BCrypt password hashing (no plaintext passwords, no password logging)
