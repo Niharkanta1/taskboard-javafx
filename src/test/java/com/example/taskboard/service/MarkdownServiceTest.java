@@ -227,9 +227,16 @@ class MarkdownServiceTest {
     }
 
     @Test
-    void parseInlineImageRendersAltText() {
-        assertEquals(List.of(new InlineSegment("alt", false, false, false, false, null)),
+    void parseInlineHttpImagePreservesSafeImageUrl() {
+        assertEquals(List.of(new InlineSegment("alt", false, false, false, false,
+                "https://example.com/img.png", true)),
                 service.parseInline("![alt](https://example.com/img.png)"));
+    }
+
+    @Test
+    void parseInlineUnsafeImageRendersAltTextOnly() {
+        assertEquals(List.of(new InlineSegment("alt", false, false, false, false, null)),
+                service.parseInline("![alt](javascript:alert(1))"));
     }
 
     @Test

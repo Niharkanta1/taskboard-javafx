@@ -149,6 +149,30 @@ class CardIntegrationTest {
     }
 
     @Test
+    void cardMovePersistsColumnAndOrderTransactionally() {
+        Workspace workspace = workspaceService.create("Development", null);
+        Board board = boardService.createBoard(workspace.getId(), "Drag board", null);
+        Card first = cardService.createCard(board.getId(), "First", null, CardStatus.PLANNED, null);
+        Card second = cardService.createCard(board.getId(), "Second", null, CardStatus.PLANNED, null);
+        Card target = cardService.createCard(board.getId(), "Target", null, CardStatus.IN_PROGRESS, null);
+
+        cardService.moveCard(first.getId(), CardStatus.PLANNED, 1);
+        cardService.moveCard(first.getId(), CardStatus.IN_PROGRESS, 1);
+
+        List<Card> reloaded = cardRepository.findByBoard(board.getId());
+        assertEquals(List.of(second.getId()), reloaded.stream()
+                .filter(card -> card.getStatus() == CardStatus.PLANNED)
+                .map(Card::getId).toList());
+        assertEquals(List.of(target.getId(), first.getId()), reloaded.stream()
+                .filter(card -> card.getStatus() == CardStatus.IN_PROGRESS)
+                .map(Card::getId).toList());
+        assertEquals(1.0, reloaded.stream().filter(card -> card.getId() == target.getId())
+                .findFirst().orElseThrow().getPosition());
+        assertEquals(2.0, reloaded.stream().filter(card -> card.getId() == first.getId())
+                .findFirst().orElseThrow().getPosition());
+    }
+
+    @Test
     void completedAtIsSetWhenEnteringCompletedAndClearedWhenLeaving() {
         Workspace workspace = workspaceService.create("Development", null);
         Board board = boardService.createBoard(workspace.getId(), "Project", null);

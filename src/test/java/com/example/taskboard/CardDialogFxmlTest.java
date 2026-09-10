@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * property bindings (e.g. the read-only {@code fitWidth} property on a
  * {@code ScrollPane}, which must be {@code fitToWidth} instead).
  *
- * <p>The description area must offer Edit/Preview mode buttons (not a
+ * <p>
+ * The description area must offer Edit/Preview mode buttons (not a
  * side-by-side split view): a ScrollPane whose content is a StackPane
  * holding both the raw Markdown {@code TextArea} and the rendered
  * preview {@code VBox}, with the editor visible in the default mode.
@@ -94,9 +95,9 @@ class CardDialogFxmlTest {
         assertNotNull(editor, "StackPane must contain the Markdown editor TextArea");
         assertNotNull(preview, "StackPane must contain the preview VBox");
 
-        // Default mode is Edit: editor visible, preview hidden.
-        assertTrue(editor.isVisible(), "editor must be visible in the default (edit) mode");
-        assertFalse(preview.isVisible(), "preview must be hidden in the default (edit) mode");
+        // Default mode is Preview: preview visible, editor hidden.
+        assertFalse(editor.isVisible(), "editor must be hidden in the default (preview) mode");
+        assertTrue(preview.isVisible(), "preview must be visible in the default (preview) mode");
     }
 
     /**

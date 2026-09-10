@@ -12,22 +12,28 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.Optional;
+import java.nio.file.Path;
+import java.util.function.Function;
 
 /**
  * Reusable card component used inside kanban columns.
  *
- * <p>Shows the card title, description and due date. Clicking the card
+ * <p>
+ * Shows the card title, description and due date. Clicking the card
  * (single or double click) opens the card editor through the provided
  * callback. All visual styling lives in card.css; the height is fixed so
  * every card is the same size: the title is truncated to two lines and
  * the description is clipped to a fixed viewport. The full content is
- * available in the card editor dialog.</p>
+ * available in the card editor dialog.
+ * </p>
  */
 public class CardView extends VBox {
 
@@ -44,8 +50,22 @@ public class CardView extends VBox {
     private final HostServices hostServices;
 
     public CardView(Card card, DueDateService dueDateService, MarkdownService markdownService,
-                     Consumer<Card> onOpenCard, BiConsumer<Card, Integer> onTaskToggle,
-                     HostServices hostServices) {
+            Consumer<Card> onOpenCard, BiConsumer<Card, Integer> onTaskToggle,
+            HostServices hostServices) {
+        this(card, dueDateService, markdownService, onOpenCard, onTaskToggle, hostServices, null);
+    }
+
+    public CardView(Card card, DueDateService dueDateService, MarkdownService markdownService,
+            Consumer<Card> onOpenCard, BiConsumer<Card, Integer> onTaskToggle,
+            HostServices hostServices, Function<Long, Optional<Path>> attachmentResolver) {
+        this(card, dueDateService, markdownService, onOpenCard, onTaskToggle, hostServices,
+                attachmentResolver, 0);
+    }
+
+    public CardView(Card card, DueDateService dueDateService, MarkdownService markdownService,
+            Consumer<Card> onOpenCard, BiConsumer<Card, Integer> onTaskToggle,
+            HostServices hostServices, Function<Long, Optional<Path>> attachmentResolver,
+            int attachmentCount) {
         this.card = card;
         this.onOpenCard = onOpenCard;
         this.markdownService = markdownService;
@@ -73,7 +93,7 @@ public class CardView extends VBox {
                         if (onTaskToggle != null) {
                             onTaskToggle.accept(card, taskIndex);
                         }
-                    }, hostServices);
+                    }, hostServices, attachmentResolver);
             descScroll.setContent(markdownContent);
             getChildren().add(descScroll);
         }
@@ -84,14 +104,27 @@ public class CardView extends VBox {
         getChildren().add(spacer);
 
         DueDateStatus dueStatus = dueDateService.status(card.getDueDate(), card.getStatus());
-        if (dueStatus != DueDateStatus.NONE) {
+        if (dueStatus != DueDateStatus.NONE || attachmentCount > 0) {
+            HBox metadata = new HBox(8);
+            metadata.setMaxWidth(Double.MAX_VALUE);
+            Region metadataSpacer = new Region();
+            HBox.setHgrow(metadataSpacer, Priority.ALWAYS);
             Label dueLabel = new Label(dueDateService.displayText(dueStatus, card.getDueDate()));
-            dueLabel.getStyleClass().add("card-due-date");
-            String styleClass = dueDateService.styleClass(dueStatus);
-            if (styleClass != null) {
-                dueLabel.getStyleClass().add(styleClass);
+            if (dueStatus != DueDateStatus.NONE) {
+                dueLabel.getStyleClass().add("card-due-date");
+                String styleClass = dueDateService.styleClass(dueStatus);
+                if (styleClass != null) {
+                    dueLabel.getStyleClass().add(styleClass);
+                }
+                metadata.getChildren().add(dueLabel);
             }
-            getChildren().add(dueLabel);
+            metadata.getChildren().add(metadataSpacer);
+            if (attachmentCount > 0) {
+                Label attachmentLabel = new Label("Attachments: " + attachmentCount);
+                attachmentLabel.getStyleClass().add("card-attachment-count");
+                metadata.getChildren().add(attachmentLabel);
+            }
+            getChildren().add(metadata);
         }
 
         setMinWidth(0);

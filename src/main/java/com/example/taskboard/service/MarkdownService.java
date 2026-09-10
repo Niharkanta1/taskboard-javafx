@@ -37,14 +37,16 @@ import java.util.List;
  * Markdown parsing and task-toggle logic for card descriptions, backed by
  * the mature Flexmark parser (flexmark-java).
  *
- * <p>Card descriptions are stored as raw Markdown. This service converts
+ * <p>
+ * Card descriptions are stored as raw Markdown. This service converts
  * the text into blocks (headings, paragraphs, list items including nested
  * lists, task items, fenced code blocks, block quotes including nested
  * quotes, tables) and inline segments (bold, italic, code, links) that the
  * view layer renders as plain JavaFX nodes. No HTML
  * is generated and no script is executed: unknown or HTML-like constructs
  * are rendered as plain text, and only {@code http}/{@code https} links
- * are treated as links.</p>
+ * are treated as links.
+ * </p>
  */
 public class MarkdownService {
 
@@ -95,7 +97,11 @@ public class MarkdownService {
 
     /** A run of inline-formatted text. */
     public record InlineSegment(String text, boolean bold, boolean italic, boolean code,
-                               boolean link, String url) {
+            boolean link, String url, boolean image) {
+        public InlineSegment(String text, boolean bold, boolean italic, boolean code,
+                boolean link, String url) {
+            this(text, bold, italic, code, link, url, false);
+        }
     }
 
     private final Parser parser;
@@ -109,11 +115,13 @@ public class MarkdownService {
     /**
      * Parses raw Markdown into blocks.
      *
-     * <p>Supported blocks: headings, paragraphs, unordered/ordered list
+     * <p>
+     * Supported blocks: headings, paragraphs, unordered/ordered list
      * items (including nested lists), task-list items, fenced code blocks,
      * block quotes (including nested quotes) and tables.
      * Task-like lines inside a fenced code block are treated as code,
-     * not as tasks.</p>
+     * not as tasks.
+     * </p>
      */
     public List<MarkdownBlock> parse(String markdown) {
         List<MarkdownBlock> blocks = new ArrayList<>();
@@ -131,10 +139,12 @@ public class MarkdownService {
     /**
      * Parses inline formatting within a single text run.
      *
-     * <p>Supported: {@code **bold**}, {@code *italic*}, {@code `code`}
+     * <p>
+     * Supported: {@code **bold**}, {@code *italic*}, {@code `code`}
      * and {@code [label](https://url)} links. Unclosed markers are kept
      * as literal text. Only {@code http} and {@code https} URLs are
-     * recognized as links; anything else is rendered as plain text.</p>
+     * recognized as links; anything else is rendered as plain text.
+     * </p>
      */
     public List<InlineSegment> parseInline(String text) {
         List<InlineSegment> segments = new ArrayList<>();
@@ -368,9 +378,12 @@ public class MarkdownService {
                 addSegment(segments, raw, bold, italic, false, false, null);
             }
         } else if (node instanceof Image image) {
-            // Images are rendered as their alt text only.
+            String imageUrl = image.getUrl() == null ? "" : image.getUrl().toString();
+            boolean attachment = imageUrl.startsWith("attachment://");
+            boolean externalImage = isSafeUrl(imageUrl);
             addSegment(segments, image.getText() == null ? "" : image.getText().toString(),
-                    bold, italic, false, false, null);
+                    bold, italic, false, false, attachment || externalImage ? imageUrl : null,
+                    attachment || externalImage);
         } else if (node instanceof HardLineBreak) {
             addSegment(segments, "\n", bold, italic, false, false, null);
         } else if (node instanceof SoftLineBreak) {
@@ -390,7 +403,7 @@ public class MarkdownService {
     }
 
     private void collectInlineChildren(Node parent, boolean bold, boolean italic,
-                                      List<InlineSegment> segments) {
+            List<InlineSegment> segments) {
         for (Node child : parent.getChildren()) {
             collectInline(child, bold, italic, segments);
         }
@@ -416,11 +429,16 @@ public class MarkdownService {
     }
 
     private void addSegment(List<InlineSegment> segments, String text, boolean bold, boolean italic,
-                           boolean code, boolean link, String url) {
+            boolean code, boolean link, String url) {
+        addSegment(segments, text, bold, italic, code, link, url, false);
+    }
+
+    private void addSegment(List<InlineSegment> segments, String text, boolean bold, boolean italic,
+            boolean code, boolean link, String url, boolean image) {
         if (text.isEmpty()) {
             return;
         }
-        segments.add(new InlineSegment(text, bold, italic, code, link, url));
+        segments.add(new InlineSegment(text, bold, italic, code, link, url, image));
     }
 
     /** Mutable document-order counter for task items. */

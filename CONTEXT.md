@@ -1,6 +1,6 @@
 # Context Checkpoint — JavaFX Trello-Like Task Board
 
-Last updated: Phase 7 (Markdown) complete and agent-verified (FXML card-dialog bug fixed); awaiting user verification.
+Last updated: Phase 10 (Production Hardening) complete and verified by user.
 
 ## 1. Project
 
@@ -19,19 +19,23 @@ Last updated: Phase 7 (Markdown) complete and agent-verified (FXML card-dialog b
 [x] Phase 4  — Board + Kanban UI        (verified by user; ScrollPane bug fixed)
 [x] Phase 5  — Card CRUD                (verified by user)
 [x] Phase 6  — Due Dates                (verified by user)
-[x] Phase 7  — Markdown                (agent-verified; awaiting user verification)
-[ ] Phase 8  — Image Attachments
-[ ] Phase 9  — Drag & Drop
-[ ] Phase 10 — Production Hardening
+[x] Phase 7  — Markdown                (verified by user)
+[x] Phase 8  — Image Attachments        (verified by user)
+[x] Phase 9  — Drag & Drop              (verified by user)
+[x] Phase 10 — Production Hardening     (verified by user)
 ```
 
 Tracker lives in `plan.md` section 36. Update it when a phase is verified.
 
 ## 3. Current State (verified)
 
-- `mvn clean test` → **BUILD SUCCESS, 163/163 tests pass** (123 previous + 37 `MarkdownServiceTest` + 1 `CardDialogFxmlTest`).
+- `mvn clean test` → **BUILD SUCCESS, 177/177 tests pass** (includes Phase 9 move unit and SQLite integration tests).
 - `mvn javafx:run` → app starts; login screen is the first view; dashboard shows the workspace list with an "Open Workspace" button; due-date labels render on board cards; card descriptions render as Markdown (headings, bold/italic, lists, task lists with checkboxes, fenced code, block quotes, http/https links).
 - Phase 7 flow: card editor (CardDialog) shows a live, non-interactive Markdown preview next to the raw Markdown field; board cards render Markdown; clicking a task checkbox on a board card toggles it (`[ ]` <-> `[x]`) and persists via `CardService.updateCard` + board refresh.
+- Phase 8 flow: existing card editor has an Attach Image action for PNG/JPG/JPEG files; files are copied to `data/attachments/card-{id}`, metadata is persisted, and a safe `attachment://{id}` Markdown reference is appended.
+- Attachment rendering resolves only numeric attachment IDs within the application-controlled directory; missing files show their alt text and traversal paths are rejected.
+- Phase 9 flow: dragging a card reorders it within its current status column or moves it to another status column; all affected positions and status changes persist transactionally.
+- Phase 10 flow: unexpected failures are logged with stack traces and shown through a generic user-safe error dialog; card moves/deletes and attachment storage emit structured INFO logs without passwords, hashes, file paths, or Markdown contents.
 - **Bug fixed (2026-09-09, user report):** `CardDialog.fxml` failed to load with `Property "fitWidth" does not exist or is read-only` — `fitWidth`/`fitHeight` are read-only `Pane` properties; `ScrollPane` uses `fitToWidth`/`fitToHeight`. Also removed the invalid `dividerPosition` attribute on `SplitPane` (dividers auto-sync with items; the default divider position is 0.5). `CardDialogFxmlTest` now loads the dialog through `FXMLLoader` with a real controller as a permanent regression.
 - Phase 5 flow: dashboard → workspace view (board list; double-click or Open opens a board) → board view (kanban columns, "New Card" button per column, click a card to edit; card editor supports title, status, due date, description, save, cancel, delete with confirmation).
 - Phase 6 flow: cards with a due date show a due-date label (`Overdue` / `Due today` / `Due <date>` / `Completed`); no due date → no label; COMPLETED/CLOSED cards always show `Completed`.
@@ -75,6 +79,7 @@ src/main/java/com/example/taskboard/
   service/CardService.java          # card validation + createCard/updateCard/deleteCard; position = max+1; completed_at rules
   service/DueDateService.java       # due-date status, display text, CSS class mapping
   service/MarkdownService.java      # Flexmark-backed Markdown parsing (blocks, inline segments) + toggleTask
+  service/AttachmentService.java    # image validation, storage, metadata and safe resolution
   service/NavigationService.java    # central scene switching (login <-> dashboard <-> workspace <-> board); getStage()
   session/SessionManager.java       # in-memory current user
   controller/LoginController.java   # login form + friendly errors
@@ -167,6 +172,7 @@ mvn javafx:run          # run app (zero setup)
 ```
 
 Manual checks after running:
+
 - Login screen appears on start.
 - Login with `dev` / `Dev-1234` succeeds → dashboard shows "Logged in as: dev".
 - Wrong password / empty fields show friendly error messages (no stack traces).
@@ -207,22 +213,26 @@ Manual checks after running:
 6. Lambda bodies passed to `Function<Connection, T>` cannot throw checked `SQLException` — catch inside and rethrow as `DatabaseException`.
 7. **Windows classpath separator is `;`** — when running `java` with Windows paths from Git Bash, use `;` (not `:`) and backslash paths; `C:` in paths is fine only with `;` separators.
 8. **`at.favre:bcrypt` is not published on Maven Central** — use `org.mindrot:jbcrypt:0.4`.
-12. **`ScrollPane` is in `javafx.scene.control`, not `javafx.scene.layout`** — a wrong FXML import fails at runtime with `ClassNotFoundException` (Phase 4 bug, fixed 2026-09-09). Regression test now checks every FXML `<?import>` class exists (`Class.forName(name, false, loader)` — `initialize=false` avoids JavaFX toolkit static init in tests).
-9. Flyway needs `gson` on the classpath for standalone runs (Maven resolves it transitively).
-10. **JavaFX 21 `Priority` is an enum** (`ALWAYS`/`SOMETIMES`/`NEVER`) — `Priority.HIGH` etc. do not compile; use `Priority.ALWAYS` for `setHgrow`/`setVgrow`.
-11. Integration tests share one temp DB per test class — assertions must be scoped to the test's own rows (global `count()` assertions break when test order changes).
-12. **FXML can only set *settable* properties** — read-only properties (e.g. `Pane.fitWidth`/`fitHeight`) fail at load time with `Property "..." does not exist or is read-only`. `ScrollPane` uses `fitToWidth`/`fitToHeight`; `SplitPane` has no settable `dividerPosition` (dividers auto-sync with items; default position 0.5). `ResourceSmokeTest` only checks resource existence + imports, so `CardDialogFxmlTest` (FXMLLoader load with a real controller) is the regression guard for FXML property-binding bugs.
+9. **`ScrollPane` is in `javafx.scene.control`, not `javafx.scene.layout`** — a wrong FXML import fails at runtime with `ClassNotFoundException` (Phase 4 bug, fixed 2026-09-09). Regression test now checks every FXML `<?import>` class exists (`Class.forName(name, false, loader)` — `initialize=false` avoids JavaFX toolkit static init in tests).
+10. Flyway needs `gson` on the classpath for standalone runs (Maven resolves it transitively).
+11. **JavaFX 21 `Priority` is an enum** (`ALWAYS`/`SOMETIMES`/`NEVER`) — `Priority.HIGH` etc. do not compile; use `Priority.ALWAYS` for `setHgrow`/`setVgrow`.
+12. Integration tests share one temp DB per test class — assertions must be scoped to the test's own rows (global `count()` assertions break when test order changes).
+13. **FXML can only set _settable_ properties** — read-only properties (e.g. `Pane.fitWidth`/`fitHeight`) fail at load time with `Property "..." does not exist or is read-only`. `ScrollPane` uses `fitToWidth`/`fitToHeight`; `SplitPane` has no settable `dividerPosition` (dividers auto-sync with items; default position 0.5). `ResourceSmokeTest` only checks resource existence + imports, so `CardDialogFxmlTest` (FXMLLoader load with a real controller) is the regression guard for FXML property-binding bugs.
 
 ## 10. Immediate Next Steps
 
-1. Wait for user to verify Phase 7 (Markdown):
-   - `mvn clean test` → 163/163 expected.
-   - `mvn javafx:run` → log in with `dev`/`Dev-1234`; open a workspace and a board.
-   - Create/edit a card with a Markdown description: `# Heading`, `**bold**`, `*italic*`, `` `code` ``, bullet/ordered lists, `- [ ]` / `- [x]` task lists, fenced code blocks, `> blockquote`, `[link](https://...)`.
-   - Card editor: live preview renders next to the raw Markdown field (preview checkboxes are NOT clickable in the dialog).
-   - Board card: rendered Markdown appears; clicking a task checkbox toggles `[ ]` <-> `[x]`, persists after refresh, and survives restart.
-   - Only http/https links are clickable/styled; other protocols and HTML-like text render as plain text.
-   - Phases 0–6 still work (login, workspace CRUD, board creation, card CRUD, due dates).
-2. On confirmation: implement Phase 8 (Image Attachments), keep all tests green, run the app, verify, then STOP and ask for verification.
+1. Wait for user to verify Phase 9 (Drag & Drop):
+
+- `mvn clean test` → 177/177 expected.
+- `mvn javafx:run` → log in with `dev`/`Dev-1234`; open a workspace and a board.
+- Create/edit a card with a Markdown description: `# Heading`, `**bold**`, `*italic*`, `` `code` ``, bullet/ordered lists, `- [ ]` / `- [x]` task lists, fenced code blocks, `> blockquote`, `[link](https://...)`.
+- Card editor: live preview renders next to the raw Markdown field (preview checkboxes are NOT clickable in the dialog).
+- Board card: rendered Markdown appears; clicking a task checkbox toggles `[ ]` <-> `[x]`, persists after refresh, and survives restart.
+- Only http/https links are clickable/styled; other protocols and HTML-like text render as plain text.
+- Drag cards within a column and confirm first/middle/last positions persist after refresh and restart.
+- Drag cards between all status columns and confirm status, order, and completed timestamp behavior persist.
+- Phases 0–8 still work (login, workspace CRUD, boards, cards, due dates, Markdown, and attachments).
+
+2. On confirmation: implement Phase 10 (Production Hardening), keep all tests green, run the app, verify, then STOP and ask for verification.
 
 > **Important for re-verification:** run a fresh build with `mvn clean javafx:run` (not a stale IntelliJ/`target/classes` build).

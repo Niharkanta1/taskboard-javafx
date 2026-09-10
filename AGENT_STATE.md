@@ -1,20 +1,23 @@
 # Agent State
 
-Current Phase: 7
-Status: COMPLETE (awaiting user verification)
-Last Verified Phase: 6 (Due Dates)
-Phase Name: Markdown
+Current Phase: 10
+Status: COMPLETE
+Last Verified Phase: 10 (Production Hardening)
+Phase Name: Production Hardening
 Build: pass
-Tests: 170/170 pass
+Tests: 177/177 pass
 Run: pass
 Blockers: none
-Next Action: user_verification_phase_7
+Next Action: project_complete
 Current Objective:
-- Phase 7 (Markdown) is implemented and agent-verified: raw Markdown stored in card description; bold/italic/headings h1-h6/nested lists/tables/task lists/links/code/nested blockquotes rendered in card view and card dialog preview; clickable task checkboxes in board view persist toggles
-- Card dialog description area now uses Edit/Preview mode buttons (raw Markdown editor vs rendered preview, default = Edit) instead of a split view
-- Stop for user verification before Phase 8 (Image Attachments)
+
+- Phase 8 (Image Attachments) is user-verified: validated PNG/JPG/JPEG files are copied to data/attachments/card-{id}, recorded in card_attachments, and inserted into raw Markdown as attachment:// IDs
+- Phase 9 (Drag & Drop) is user-verified: cards can reorder within a column or move between status columns; status, sequential position, updated_at, and completed_at are persisted transactionally
+- Phase 10 (Production Hardening) is user-verified: global unexpected-error logging/dialog handling, CRUD and attachment operation logging, validation and safe error messaging remain in place
+- All planned phases are complete.
 
 Completed Phases:
+
 - 0: Project Foundation (verified)
 - 1: SQLite + Database Infrastructure (verified)
 - 2: Authentication + Login (verified)
@@ -22,16 +25,28 @@ Completed Phases:
 - 4: Board + Kanban UI (verified by user; ScrollPane bug fixed)
 - 5: Card CRUD (verified by user)
 - 6: Due Dates (verified by user)
+- 7: Markdown (verified by user)
+- 8: Image Attachments (verified by user)
+- 9: Drag & Drop (verified by user)
+- 10: Production Hardening (verified by user)
 
 Pending Phases:
-7, 8, 9, 10
+none
 
 Files Changed This Phase:
+
 - pom.xml (added com.vladsch.flexmark:flexmark-all:0.42.14; added flexmark-ext-gfm-tables:0.42.14 for GFM table parsing)
 - src/main/java/com/example/taskboard/service/MarkdownService.java (new: Flexmark-backed block/inline parsing + toggleTask; ListItemBlock/TaskItemBlock carry nesting indent; BlockQuoteBlock carries nested content blocks; TableBlock parsed via GFM TablesExtension, separator row skipped)
 - src/main/java/com/example/taskboard/view/MarkdownRenderer.java (new: renders blocks as plain JavaFX nodes; no HTML/WebView; headings h1-h6 keep their level; nested list/task rows indented 16px per level; tables render as GridPane with header styling; nested blockquotes render as nested quote boxes)
 - src/main/java/com/example/taskboard/view/CardView.java (renders Markdown description; task-toggle callback)
 - src/main/java/com/example/taskboard/controller/BoardController.java (toggleCardTask: toggleTask + updateCard + refresh)
+- src/main/java/com/example/taskboard/service/AttachmentService.java (validates and stores images, records relative metadata, resolves safe attachment IDs)
+- src/main/java/com/example/taskboard/model/CardAttachment.java + repository (attachment metadata persistence)
+- src/main/java/com/example/taskboard/controller/CardDialogController.java (Attach Image action and Markdown reference insertion)
+- src/main/java/com/example/taskboard/view/MarkdownRenderer.java + CardView.java (safe attachment image rendering with missing-file fallback)
+- src/main/resources/fxml/CardDialog.fxml + card.css (Attach Image control and image styling)
+- src/test/java/com/example/taskboard/service/AttachmentServiceTest.java (storage, validation, traversal, and missing-file tests)
+- src/main/java/com/example/taskboard/util/GlobalErrorHandler.java (centralized unexpected-failure logging and generic JavaFX error dialog)
 - src/main/java/com/example/taskboard/controller/CardDialogController.java (Edit/Preview mode buttons switch between raw Markdown editor and rendered preview; default mode = Edit; preview non-interactive)
 - src/main/resources/fxml/CardDialog.fxml (description area: Edit/Preview button bar + ScrollPane with StackPane holding TextArea editor and preview VBox; replaced old SplitPane; fixed fitToWidth/fitToHeight)
 - src/main/resources/css/card.css (Markdown style classes: card-markdown, md-h1..h6, md-bold, md-italic, md-code, md-link, md-bullet, card-markdown-task-item, card-markdown-codeblock, md-blockquote, md-table, md-table-header, mode-button, mode-button-active)
@@ -41,6 +56,7 @@ Files Changed This Phase:
 - src/test/java/com/example/taskboard/MarkdownRenderTest.java (new: renders MARKDOWN_TEST.md end-to-end and asserts headings h1/h2/h6, emphasis, nested list indentation, table GridPane, fenced + mermaid code, links, nested blockquotes, image alt text, inline code)
 
 Verification:
+
 - mvn clean test: PASS (agent-run 2026-09-09, 170/170) | user check: PENDING
 - mvn javafx:run: PASS (agent-run, app starts, "Application started successfully") | user check: PENDING
 - End-to-end verifier (real temp DB + real JavaFX toolkit): PHASE7 VERIFY: ALL CHECKS PASSED — 8-block parse order (heading, paragraph, 2 tasks, code, list, blockquote, link paragraph), rendered node types (heading Label, code TextArea, task CheckBoxes with correct states, link Text node with md-link), toggleTask + updateCard persistence (re-render shows checked checkbox), CardView renders without exception; throwaway verifier removed
@@ -48,9 +64,22 @@ Verification:
 - Dialog preview is non-interactive; task toggling happens from the board view after save
 - FXML bug fixed after user report: CardDialog.fxml used read-only Pane properties fitWidth/fitHeight on ScrollPane (must be fitToWidth/fitToHeight) and an invalid dividerPosition attribute on SplitPane (dividers auto-sync with items; default position is 0.5); both removed/fixed; CardDialogFxmlTest now loads the dialog through FXMLLoader as a permanent regression
 - CardView/card-dialog fixes per user request: nested list items no longer dropped (indent tracked in parse + 16px left padding per level in render), tables parse (GFM TablesExtension; separator row skipped) and render as GridPane, headings h4-h6 keep their own styles, nested blockquotes keep nested structure, card dialog uses Edit/Preview buttons instead of a split view (default = Edit); MARKDOWN_TEST.md renders fully (covered by MarkdownRenderTest)
-- user manual verification of Phase 7 (incl. the CardView/card-dialog fixes): PENDING
+- user manually verified Phase 7 (incl. the CardView/card-dialog fixes).
+- `mvn clean test`: PASS (173/173, agent-run 2026-09-10; includes AttachmentServiceTest)
+- `mvn javafx:run`: PASS (agent-run 2026-09-10; application started successfully)
+- Phase 8 user manually verified.
+- Phase 9 user manually verified.
+- `mvn clean test`: PASS (177/177, agent-run 2026-09-10; includes Phase 10 hardening changes)
+- `mvn javafx:run`: PASS (agent-run 2026-09-10; application started successfully)
+- Phase 10 user manual verification: PENDING. Verify friendly handling of an operation failure, startup/shutdown logs, auth logs without credentials, CRUD logs, and attachment failure logs.
+
+2026-09-10: user confirmed Phase 7; Phase 8 image attachments implemented: AttachmentService validates real PNG/JPG/JPEG images up to 10 MB, copies into data/attachments/card-{id}, records relative metadata, appends attachment:// Markdown references, and resolves images safely in previews and board cards; tests 173/173; app started successfully; awaiting user verification
+2026-09-10: user verified Phase 8; Phase 9 drag and drop implemented: CardService computes sequential placements, CardRepositoryImpl persists all affected status/position/updated_at/completed_at fields in one transaction, and BoardController wires JavaFX card drag sources to four status-column drop targets; tests 176/176; app started successfully; awaiting user verification
+2026-09-10: user verified Phase 9; Phase 10 production hardening implemented: GlobalErrorHandler logs unexpected failures and shows a generic error dialog, card move/delete and attachment storage events are logged without sensitive content, and duplicate Main imports were cleaned; tests 177/177; app started successfully; awaiting user verification
+2026-09-10: user verified Phase 10; all planned phases are complete.
 
 Invariants:
+
 - one phase at a time; stop after each for user verification
 - all tests must stay green
 - db.getConnection() returns shared connection; callers must NOT close it

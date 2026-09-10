@@ -133,6 +133,15 @@
     -fx-padding: 8px 10px;
 }
 
+.card-markdown-image {
+    -fx-preserve-ratio: true;
+}
+
+.card-attachment-count {
+    -fx-font-size: 11px;
+    -fx-text-fill: #64748b;
+}
+
 .md-link {
     -fx-text-fill: #2563eb;
     -fx-underline: true;

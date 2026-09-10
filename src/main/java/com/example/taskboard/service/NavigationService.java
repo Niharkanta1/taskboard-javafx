@@ -24,9 +24,11 @@ import java.net.URL;
 /**
  * Central navigation between application screens.
  *
- * <p>Owns scene creation and stylesheet loading so controllers do not
+ * <p>
+ * Owns scene creation and stylesheet loading so controllers do not
  * build screens themselves. The session is preserved across screen
- * switches; logout returns to the login screen.</p>
+ * switches; logout returns to the login screen.
+ * </p>
  */
 public class NavigationService {
 
@@ -38,20 +40,23 @@ public class NavigationService {
     private final WorkspaceService workspaceService;
     private final BoardService boardService;
     private final CardService cardService;
+    private final AttachmentService attachmentService;
     private final DueDateService dueDateService;
     private final MarkdownService markdownService;
     private final HostServices hostServices;
 
     public NavigationService(Stage stage, AuthService authService, SessionManager sessionManager,
-                            WorkspaceService workspaceService, BoardService boardService,
-                            CardService cardService, DueDateService dueDateService,
-                            MarkdownService markdownService, HostServices hostServices) {
+            WorkspaceService workspaceService, BoardService boardService,
+            CardService cardService, AttachmentService attachmentService,
+            DueDateService dueDateService,
+            MarkdownService markdownService, HostServices hostServices) {
         this.stage = stage;
         this.authService = authService;
         this.sessionManager = sessionManager;
         this.workspaceService = workspaceService;
         this.boardService = boardService;
         this.cardService = cardService;
+        this.attachmentService = attachmentService;
         this.dueDateService = dueDateService;
         this.markdownService = markdownService;
         this.hostServices = hostServices;
@@ -97,8 +102,10 @@ public class NavigationService {
     /**
      * Shows the kanban board view for the given board id.
      *
-     * <p>If the board (or its workspace) cannot be loaded, the user is
-     * sent back to the dashboard instead of crashing.</p>
+     * <p>
+     * If the board (or its workspace) cannot be loaded, the user is
+     * sent back to the dashboard instead of crashing.
+     * </p>
      */
     public void showBoard(long boardId) {
         Board board;
@@ -117,7 +124,7 @@ public class NavigationService {
         }
         FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.BOARD_FXML));
         loader.setController(new BoardController(board, workspace, this, boardService, cardService,
-                dueDateService, markdownService, hostServices));
+                attachmentService, dueDateService, markdownService, hostServices));
         Parent root = loadRoot(loader, AppConfig.BOARD_FXML);
         showScene(root, AppConfig.BOARD_WINDOW_WIDTH, AppConfig.BOARD_WINDOW_HEIGHT,
                 AppConfig.BOARD_CSS, AppConfig.CARD_CSS);

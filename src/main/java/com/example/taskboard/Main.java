@@ -1,16 +1,20 @@
 package com.example.taskboard;
 
 import com.example.taskboard.config.AppConfig;
+import com.example.taskboard.config.AppPaths;
 import com.example.taskboard.database.DatabaseManager;
 import com.example.taskboard.repository.BoardRepository;
 import com.example.taskboard.repository.CardRepository;
+import com.example.taskboard.repository.CardAttachmentRepository;
 import com.example.taskboard.repository.UserRepository;
 import com.example.taskboard.repository.WorkspaceRepository;
 import com.example.taskboard.repository.impl.BoardRepositoryImpl;
 import com.example.taskboard.repository.impl.CardRepositoryImpl;
+import com.example.taskboard.repository.impl.CardAttachmentRepositoryImpl;
 import com.example.taskboard.repository.impl.UserRepositoryImpl;
 import com.example.taskboard.repository.impl.WorkspaceRepositoryImpl;
 import com.example.taskboard.service.AuthService;
+import com.example.taskboard.service.AttachmentService;
 import com.example.taskboard.service.BoardService;
 import com.example.taskboard.service.CardService;
 import com.example.taskboard.service.DevUserBootstrap;
@@ -19,6 +23,7 @@ import com.example.taskboard.service.MarkdownService;
 import com.example.taskboard.service.NavigationService;
 import com.example.taskboard.service.WorkspaceService;
 import com.example.taskboard.session.SessionManager;
+import com.example.taskboard.util.GlobalErrorHandler;
 
 import javafx.application.Application;
 import javafx.application.HostServices;
@@ -30,9 +35,11 @@ import org.slf4j.LoggerFactory;
 /**
  * JavaFX application entry point.
  *
- * <p>Initializes the database, wires the service layer, ensures the
+ * <p>
+ * Initializes the database, wires the service layer, ensures the
  * development-only initial user exists and opens the login screen.
- * All visual styling lives in CSS.</p>
+ * All visual styling lives in CSS.
+ * </p>
  */
 public class Main extends Application {
 
@@ -56,15 +63,19 @@ public class Main extends Application {
         WorkspaceRepository workspaceRepository = new WorkspaceRepositoryImpl(databaseManager);
         BoardRepository boardRepository = new BoardRepositoryImpl(databaseManager);
         CardRepository cardRepository = new CardRepositoryImpl(databaseManager);
+        CardAttachmentRepository attachmentRepository = new CardAttachmentRepositoryImpl(databaseManager);
         AuthService authService = new AuthService(userRepository);
         WorkspaceService workspaceService = new WorkspaceService(workspaceRepository);
         BoardService boardService = new BoardService(boardRepository, cardRepository, workspaceRepository);
         CardService cardService = new CardService(cardRepository, boardRepository);
+        AttachmentService attachmentService = new AttachmentService(AppPaths.ATTACHMENTS_PATH, attachmentRepository);
         DueDateService dueDateService = new DueDateService();
         MarkdownService markdownService = new MarkdownService();
         HostServices hostServices = getHostServices();
         SessionManager sessionManager = new SessionManager();
-        NavigationService navigationService = new NavigationService(stage, authService, sessionManager, workspaceService, boardService, cardService, dueDateService, markdownService, hostServices);
+        NavigationService navigationService = new NavigationService(stage, authService, sessionManager,
+                workspaceService, boardService, cardService, attachmentService, dueDateService,
+                markdownService, hostServices);
 
         new DevUserBootstrap(userRepository, authService).ensureInitialUser();
 
@@ -82,6 +93,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
+        GlobalErrorHandler.install();
         launch(args);
     }
 }

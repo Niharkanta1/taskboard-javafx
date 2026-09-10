@@ -17,6 +17,7 @@ import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -27,13 +28,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Consumer;
 
 /**
  * Renders parsed Markdown blocks as plain JavaFX nodes.
  *
- * <p>All content is rendered as text nodes, labels and text areas — no
- * HTML, no scripting. Styling comes from CSS classes in card.css.</p>
+ * <p>
+ * All content is rendered as text nodes, labels and text areas — no
+ * HTML, no scripting. Styling comes from CSS classes in card.css.
+ * </p>
  */
 public final class MarkdownRenderer {
 
@@ -48,27 +55,43 @@ public final class MarkdownRenderer {
     /**
      * Renders a card description into a container node.
      *
-     * @param markdown       raw Markdown description (may be null or blank)
+     * @param markdown        raw Markdown description (may be null or blank)
      * @param markdownService parser for blocks and inline segments
-     * @param onTaskToggle   callback invoked with the task index when a
-     *                       task-list checkbox is clicked; may be null
-     * @param hostServices   used to open http/https links in the default
-     *                       browser; may be null (links are still styled)
+     * @param onTaskToggle    callback invoked with the task index when a
+     *                        task-list checkbox is clicked; may be null
+     * @param hostServices    used to open http/https links in the default
+     *                        browser; may be null (links are still styled)
      */
     public static Node render(String markdown, MarkdownService markdownService,
-                             Consumer<Integer> onTaskToggle, HostServices hostServices) {
+            Consumer<Integer> onTaskToggle, HostServices hostServices) {
+        return render(markdown, markdownService, onTaskToggle, hostServices, null);
+    }
+
+    public static Node render(String markdown, MarkdownService markdownService,
+            Consumer<Integer> onTaskToggle, HostServices hostServices,
+            Function<Long, Optional<Path>> attachmentResolver) {
+        return render(markdown, markdownService, onTaskToggle, hostServices, attachmentResolver, 480);
+    }
+
+    public static Node render(String markdown, MarkdownService markdownService,
+            Consumer<Integer> onTaskToggle, HostServices hostServices,
+            Function<Long, Optional<Path>> attachmentResolver,
+            double imageMaxWidth) {
         VBox container = new VBox(4);
         container.getStyleClass().add("card-markdown");
         container.setMaxWidth(Double.MAX_VALUE);
 
         for (MarkdownBlock block : markdownService.parse(markdown)) {
-            container.getChildren().add(renderBlock(block, markdownService, onTaskToggle, hostServices));
+            container.getChildren().add(renderBlock(block, markdownService, onTaskToggle, hostServices,
+                    attachmentResolver, imageMaxWidth));
         }
         return container;
     }
 
     private static Node renderBlock(MarkdownBlock block, MarkdownService markdownService,
-                                   Consumer<Integer> onTaskToggle, HostServices hostServices) {
+            Consumer<Integer> onTaskToggle, HostServices hostServices,
+            Function<Long, Optional<Path>> attachmentResolver,
+            double imageMaxWidth) {
         switch (block) {
             case HeadingBlock heading: {
                 Label label = new Label(heading.text());
@@ -79,7 +102,7 @@ public final class MarkdownRenderer {
                 return label;
             }
             case ParagraphBlock paragraph: {
-                return inlineFlow(paragraph.text(), markdownService, hostServices);
+                return inlineFlow(paragraph.text(), markdownService, hostServices, attachmentResolver, imageMaxWidth);
             }
             case ListItemBlock item: {
                 HBox row = new HBox(4);
@@ -89,7 +112,8 @@ public final class MarkdownRenderer {
                 Label bullet = new Label(item.ordered() ? item.number() + "." : "•");
                 bullet.getStyleClass().add("md-bullet");
                 row.getChildren().add(bullet);
-                row.getChildren().add(inlineFlow(item.text(), markdownService, hostServices));
+                row.getChildren()
+                        .add(inlineFlow(item.text(), markdownService, hostServices, attachmentResolver, imageMaxWidth));
                 return row;
             }
             case TaskItemBlock task: {
@@ -106,7 +130,8 @@ public final class MarkdownRenderer {
                     checkBox.setOnAction(event -> onTaskToggle.accept(task.taskIndex()));
                 }
                 row.getChildren().add(checkBox);
-                row.getChildren().add(inlineFlow(task.text(), markdownService, hostServices));
+                row.getChildren()
+                        .add(inlineFlow(task.text(), markdownService, hostServices, attachmentResolver, imageMaxWidth));
                 return row;
             }
             case CodeBlock code: {
@@ -142,7 +167,8 @@ public final class MarkdownRenderer {
                 quoteBox.setMaxWidth(Double.MAX_VALUE);
                 for (MarkdownBlock inner : quote.content()) {
                     quoteBox.getChildren().add(
-                            renderBlock(inner, markdownService, onTaskToggle, hostServices));
+                            renderBlock(inner, markdownService, onTaskToggle, hostServices, attachmentResolver,
+                                    imageMaxWidth));
                 }
                 return quoteBox;
             }
@@ -153,14 +179,55 @@ public final class MarkdownRenderer {
     }
 
     private static TextFlow inlineFlow(String text, MarkdownService markdownService,
-                                      HostServices hostServices) {
+            HostServices hostServices, Function<Long, Optional<Path>> attachmentResolver,
+            double imageMaxWidth) {
         TextFlow flow = new TextFlow();
         flow.getStyleClass().add("card-markdown-paragraph");
         flow.setMaxWidth(Double.MAX_VALUE);
         for (InlineSegment segment : markdownService.parseInline(text)) {
+            if (segment.image()) {
+                Node image = imageNode(segment, attachmentResolver, imageMaxWidth);
+                if (image != null) {
+                    flow.getChildren().add(image);
+                    continue;
+                }
+            }
             flow.getChildren().add(segmentNode(segment, hostServices));
         }
         return flow;
+    }
+
+    private static Node imageNode(InlineSegment segment,
+            Function<Long, Optional<Path>> resolver, double imageMaxWidth) {
+        if (segment.url() == null) {
+            return null;
+        }
+        try {
+            javafx.scene.image.Image image;
+            if (segment.url().matches("attachment://\\d+")) {
+                if (resolver == null) {
+                    return null;
+                }
+                long id = Long.parseLong(segment.url().substring("attachment://".length()));
+                Optional<Path> path = resolver.apply(id);
+                if (path.isEmpty() || !Files.isRegularFile(path.get())) {
+                    return null;
+                }
+                image = new javafx.scene.image.Image(path.get().toUri().toString(), imageMaxWidth, 0, true, true);
+            } else if (segment.url().startsWith("http://") || segment.url().startsWith("https://")) {
+                image = new javafx.scene.image.Image(segment.url(), imageMaxWidth, 0, true, true, true);
+            } else {
+                return null;
+            }
+            ImageView imageView = new ImageView(image);
+            imageView.setPreserveRatio(true);
+            imageView.setFitWidth(imageMaxWidth);
+            imageView.getStyleClass().add("card-markdown-image");
+            return imageView;
+        } catch (RuntimeException e) {
+            logger.warn("Could not render image attachment", e);
+            return null;
+        }
     }
 
     private static Text segmentNode(InlineSegment segment, HostServices hostServices) {

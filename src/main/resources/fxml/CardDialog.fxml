@@ -33,6 +33,7 @@
             <HBox styleClass="description-mode-bar" spacing="8" alignment="CENTER_LEFT">
                 <Button fx:id="editButton" styleClass="mode-button" text="Edit" onAction="#onEditMode" />
                 <Button fx:id="previewButton" styleClass="mode-button" text="Preview" onAction="#onPreviewMode" />
+                <Button fx:id="attachButton" styleClass="mode-button" text="Attach Image" onAction="#onAttachImage" />
             </HBox>
             <ScrollPane styleClass="dialog-scroll" fitToWidth="true" fitToHeight="true">
                 <content>

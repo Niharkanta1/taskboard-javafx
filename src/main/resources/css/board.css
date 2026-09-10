@@ -34,6 +34,13 @@
     -fx-pref-width: 280px;
 }
 
+.board-column-drag-target {
+    -fx-border-color: #2563eb;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+    -fx-background-color: #dbeafe;
+}
+
 /* Thin vertical line separating the kanban columns */
 .board-divider {
     -fx-min-width: 1px;

@@ -4,6 +4,8 @@ import com.example.taskboard.exception.AppException;
 import com.example.taskboard.exception.ValidationException;
 import com.example.taskboard.model.Card;
 import com.example.taskboard.model.CardStatus;
+import com.example.taskboard.model.CardAttachment;
+import com.example.taskboard.service.AttachmentService;
 import com.example.taskboard.service.CardService;
 import com.example.taskboard.service.MarkdownService;
 import com.example.taskboard.view.MarkdownRenderer;
@@ -19,21 +21,26 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.nio.file.Path;
 
 /**
  * Modal dialog for creating or editing a card on a board.
  *
- * <p>Validation and persistence are delegated to {@link CardService};
- * the dialog only reports friendly messages for failures.</p>
+ * <p>
+ * Validation and persistence are delegated to {@link CardService};
+ * the dialog only reports friendly messages for failures.
+ * </p>
  */
 public class CardDialogController {
 
     private static final Logger logger = LoggerFactory.getLogger(CardDialogController.class);
+    private static final double PREVIEW_IMAGE_WIDTH = 220;
 
     private final CardService cardService;
     private final long boardId;
@@ -43,6 +50,7 @@ public class CardDialogController {
     private final Stage stage;
     private final MarkdownService markdownService;
     private final HostServices hostServices;
+    private final AttachmentService attachmentService;
 
     @FXML
     private Label titleLabel;
@@ -74,14 +82,30 @@ public class CardDialogController {
     @FXML
     private Button deleteButton;
 
+    @FXML
+    private Button attachButton;
+
     public CardDialogController(CardService cardService,
-                              long boardId,
-                              Card existing,
-                              CardStatus defaultStatus,
-                              Runnable onSaved,
-                              Stage stage,
-                              MarkdownService markdownService,
-                              HostServices hostServices) {
+            long boardId,
+            Card existing,
+            CardStatus defaultStatus,
+            Runnable onSaved,
+            Stage stage,
+            MarkdownService markdownService,
+            HostServices hostServices) {
+        this(cardService, boardId, existing, defaultStatus, onSaved, stage, markdownService,
+                hostServices, null);
+    }
+
+    public CardDialogController(CardService cardService,
+            long boardId,
+            Card existing,
+            CardStatus defaultStatus,
+            Runnable onSaved,
+            Stage stage,
+            MarkdownService markdownService,
+            HostServices hostServices,
+            AttachmentService attachmentService) {
         this.cardService = cardService;
         this.boardId = boardId;
         this.existing = existing;
@@ -90,8 +114,8 @@ public class CardDialogController {
         this.stage = stage;
         this.markdownService = markdownService;
         this.hostServices = hostServices;
+        this.attachmentService = attachmentService;
     }
-
 
     @FXML
     private void initialize() {
@@ -101,6 +125,7 @@ public class CardDialogController {
             titleLabel.setText("New Card");
             statusChoice.setValue(defaultStatus);
             titleField.requestFocus();
+            attachButton.setDisable(true);
         } else {
             titleLabel.setText("Edit Card");
             titleField.setText(existing.getTitle());
@@ -113,7 +138,7 @@ public class CardDialogController {
 
         descriptionField.textProperty().addListener((observable, oldValue, newValue) -> refreshPreview());
         refreshPreview();
-        setMode(false);
+        setMode(true);
     }
 
     /**
@@ -158,8 +183,37 @@ public class CardDialogController {
     private void refreshPreview() {
         String text = descriptionField.getText() == null ? "" : descriptionField.getText();
         descriptionPreview.getChildren().clear();
-        Node rendered = MarkdownRenderer.render(text, markdownService, null, hostServices);
+        Node rendered = MarkdownRenderer.render(text, markdownService, null, hostServices,
+                attachmentService == null ? null : attachmentService::resolveById, PREVIEW_IMAGE_WIDTH);
         descriptionPreview.getChildren().add(rendered);
+    }
+
+    @FXML
+    private void onAttachImage() {
+        if (existing == null || attachmentService == null) {
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Attach Image");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                "Images (PNG, JPG, JPEG)", "*.png", "*.PNG", "*.jpg", "*.JPG", "*.jpeg", "*.JPEG"));
+        java.io.File selected = chooser.showOpenDialog(stage);
+        if (selected == null) {
+            return;
+        }
+        try {
+            CardAttachment attachment = attachmentService.attachImage(existing.getId(), Path.of(selected.toURI()));
+            String alt = attachment.getFileName().replace("]", "");
+            String current = descriptionField.getText() == null ? "" : descriptionField.getText().trim();
+            String reference = "![" + alt + "](attachment://" + attachment.getId() + ")";
+            descriptionField.setText(current.isEmpty() ? reference : current + "\n\n" + reference);
+            errorLabel.setText("");
+        } catch (ValidationException e) {
+            errorLabel.setText(e.getMessage());
+        } catch (AppException e) {
+            logger.error("Failed to attach image to card {}", existing.getId(), e);
+            errorLabel.setText("Unable to attach the image. Please try again.");
+        }
     }
 
     @FXML

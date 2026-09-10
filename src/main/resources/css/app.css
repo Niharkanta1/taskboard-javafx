@@ -65,8 +65,16 @@
     -fx-cursor: hand;
 }
 
-.new-card-button:hover, .mode-button:hover, .dialog-cancel:hover {
+.new-card-button:hover, .dialog-cancel:hover {
     -fx-background-color: #f1f5f9;
+}
+
+.mode-button:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.mode-button-active:hover {
+    -fx-background-color: -app-accent-hover;
 }
 
 .mode-button-active {

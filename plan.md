@@ -1,9 +1,11 @@
 # JavaFX Trello-Like Task Board — Incremental Plan
 
 ## 1. Objective
+
 Build a production-quality desktop Trello-like task manager with JavaFX. Develop **one phase at a time**; every phase must compile, run, pass relevant tests, and be manually verified before the next phase.
 
 Features:
+
 - Login; workspace CRUD; boards/Kanban; card CRUD
 - Card statuses: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `CLOSED`
 - Due dates; Markdown descriptions/checklists; images in Markdown
@@ -11,7 +13,9 @@ Features:
 - FXML + Scene Builder-compatible UI; CSS-separated styling
 
 ## 2. Mandatory Agent Rules
+
 For each phase:
+
 1. Inspect current implementation.
 2. Briefly plan files, DB changes, tests, behavior.
 3. Implement **only the current phase**.
@@ -25,7 +29,9 @@ For each phase:
 Never blindly replace working code or refactor unnecessarily. Never start a later phase without user confirmation.
 
 ## 3. Architecture / UI / DB
+
 UI stack: JavaFX + FXML + Scene Builder + JavaFX CSS.
+
 - FXML = structure/layout; Java = behavior; CSS = styling.
 - Avoid UI construction in Java unless technically justified.
 - Keep major screens Scene Builder-editable.
@@ -33,9 +39,11 @@ UI stack: JavaFX + FXML + Scene Builder + JavaFX CSS.
 
 Layering:
 `JavaFX UI → Controllers/ViewModels → Services → Repositories → Database`
+
 - No SQL in controllers; business rules belong in services.
 
 DB:
+
 - SQLite + JDBC + Flyway; persistent `data/taskboard.db`
 - Auto-create `data/` and DB.
 - Enable `PRAGMA foreign_keys = ON` on every connection.
@@ -43,12 +51,14 @@ DB:
 - Never use an in-memory DB for the real app.
 
 ## 4. Technology
+
 - Java 21+; prefer Java 21 LTS, but don't use features newer than configured Java.
 - Maven, JavaFX, FXML, Scene Builder, SQLite/JDBC, Flyway, SLF4J, Logback, JUnit 5.
 - Recommended only when useful: ControlsFX, BCrypt/Argon2, Flexmark-Java, Mockito, TestFX.
 - Avoid unnecessary dependencies; each must solve a real requirement.
 
 ## 5. Target Structure
+
 ```text
 src/main/java/com/example/taskboard/
   Main.java
@@ -69,14 +79,18 @@ src/main/resources/
 
 src/test/java/com/example/taskboard/
 ```
+
 Package may change if explicitly specified.
 
 ## 6. Domain
+
 `User → Workspace → Board → Card → Attachments`
+
 - Workspace has one or more boards.
 - Card belongs to exactly one board.
 
 ## 7. SQLite Schema
+
 ```sql
 PRAGMA foreign_keys = ON;
 
@@ -130,9 +144,11 @@ card_attachments(
  FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
 );
 ```
+
 Use PK/FK/unique constraints/indexes as appropriate. Never store plaintext passwords. Persist `CardStatus` as stable strings, never enum ordinals.
 
 ## 8. Date/Time
+
 Use `java.time`: `LocalDate` for date-only deadlines, `Instant` for timestamps. Avoid `java.util.Date/Calendar` except required APIs. Store timestamps consistently as ISO-8601 (e.g. `2026-09-08T10:15:30Z`).
 
 ---
@@ -140,9 +156,11 @@ Use `java.time`: `LocalDate` for date-only deadlines, `Instant` for timestamps. 
 # 9. Development Phases
 
 ## Phase 0 — Project Foundation
+
 Goal: initial runnable JavaFX infrastructure.
 
 Implement:
+
 - Maven + Java 21+
 - JavaFX entry point
 - FXML loading
@@ -155,6 +173,7 @@ Implement:
 - Log startup; never log passwords/credentials
 
 Verify:
+
 - `mvn clean test`
 - `mvn javafx:run`
 - app/window/FXML/CSS/log file work; Scene Builder opens FXML; no stack traces
@@ -162,11 +181,13 @@ Verify:
 **STOP; request user verification.**
 
 ## Phase 1 — SQLite + DB Infrastructure
+
 Goal: persistent storage without major UI change.
 
 Implement `DatabaseManager`, `MigrationManager`, SQLite at `data/taskboard.db`, Flyway `V1__initial_schema.sql`, tables above, repository foundations. Don't implement unnecessary full CRUD yet.
 
 Verify:
+
 - auto-created `data/taskboard.db`
 - migration runs once and persists across restart
 - tables/constraints work
@@ -176,8 +197,10 @@ Verify:
 **STOP.**
 
 ## Phase 2 — Authentication/Login
+
 UI: `Login.fxml`, `LoginController`.
 Backend: `UserRepository`, `AuthService`, `SessionManager`.
+
 - Secure BCrypt/Argon2 hashing; never plaintext comparison/storage.
 - Controlled dev-only initial-user bootstrap; never hard-code production password.
   Flow: `Start → Login → AuthService → UserRepository → SQLite → Dashboard`.
@@ -189,6 +212,7 @@ Tests: hashing, verification, auth success/failure, session creation/logout.
 **STOP.**
 
 ## Phase 3 — Workspace CRUD
+
 Dashboard lists workspaces; workspace dialog has name/description and Cancel/Save.
 Implement `WorkspaceRepository`, `WorkspaceService`, `WorkspaceController`; Create/Read/Update/Delete.
 Validate name: required, trimmed, nonblank, reasonable max length.
@@ -200,6 +224,7 @@ Tests: service validation + repository CRUD.
 **STOP.**
 
 ## Phase 4 — Board + Kanban UI
+
 Create Trello-like columns:
 `PLANNED | IN PROGRESS | COMPLETED | CLOSED`.
 Use HBox/VBox/ScrollPane/BorderPane/StackPane as appropriate; cards are reusable JavaFX components.
@@ -211,11 +236,13 @@ Verify board/columns/cards/empty columns/scrolling/resizing and CSS-only visual 
 **STOP.**
 
 ## Phase 5 — Card CRUD
+
 Card fields:
 `title, description, status, due_date, position, created_at, updated_at, completed_at`.
 Create `CardDialog.fxml` + `CardController`; CRUD.
 Stable string status values.
 Recommended completed timestamp:
+
 - enter `COMPLETED` → set `completed_at`
 - leave `COMPLETED` → clear it
 - `CLOSED` remains separate final status
@@ -226,10 +253,12 @@ Verify create/edit/open/status/delete/restart/persistence.
 **STOP.**
 
 ## Phase 6 — Due Dates
+
 Implement `DueDateService`, `DueDateStatus`:
 `NONE, UPCOMING, DUE_TODAY, OVERDUE, COMPLETED`.
 
 Rules:
+
 - no date → NONE
 - future → UPCOMING
 - today → DUE_TODAY
@@ -244,6 +273,7 @@ Test no date, yesterday, today, tomorrow, future, completed, closed; unit-test d
 **STOP.**
 
 ## Phase 7 — Markdown
+
 Use Flexmark-Java/mature parser; **never write custom Markdown parser**.
 Store original Markdown in `cards.description`, not only rendered HTML.
 Support headings, bold, italic, ordered/unordered lists, links, inline/code blocks, checkboxes, images.
@@ -256,7 +286,9 @@ Verify rich Markdown, save, restart, reopen, original Markdown preserved and ren
 **STOP.**
 
 ## Phase 8 — Image Attachments
+
 Storage:
+
 ```text
 data/
   taskboard.db
@@ -264,6 +296,7 @@ data/
     card-1/{image1.png,screenshot.jpg}
     card-2/image.png
 ```
+
 Don't store large images in SQLite unless compelling.
 Implement `AttachmentService`, `CardAttachmentRepository`, `[Attach Image]`.
 On attach: validate → create card dir → copy → DB record → insert Markdown reference → refresh preview.
@@ -274,7 +307,9 @@ Verify PNG/JPG/JPEG, invalid type, large file, missing/deleted attachment, resta
 **STOP.**
 
 ## Phase 9 — Drag & Drop
+
 Support:
+
 - reorder within same column
 - move between status columns
 
@@ -288,37 +323,46 @@ Verify same-column/other-column, first/last, multi-card reorder, restart/order p
 **STOP.**
 
 ## Phase 10 — Production Hardening
+
 Logging: SLF4J + Logback.
 Log startup/shutdown, auth success/failure (no passwords), DB init, CRUD failures, unexpected exceptions, attachment failures.
 Never log passwords, hashes, sensitive user data, or unnecessary full Markdown.
 Levels: TRACE/DEBUG/INFO/WARN/ERROR; INFO for important events, DEBUG diagnostics, ERROR failures.
 
 ### Global errors
+
 Normal user-operation failures must not crash app. Show friendly messages (e.g. “Unable to save the card. Please try again.”); log real exception internally.
 Exceptions: `AppException`, `DatabaseException`, `AuthenticationException`, `ValidationException`; use exception chaining.
 
 ### Validation
+
 Centralize where practical; validate in services as well as UI.
+
 - Workspace: required name + max length
 - Card: required/max title; description max if needed
 - Attachment: allowed image types + max size
 
 ### Tests
+
 JUnit 5:
+
 - Unit: AuthService, WorkspaceService, CardService, DueDateService, MarkdownService, validation
 - Repository: temporary DB; insert/update/delete/find, relationships, cascades, transactions
 - UI/TestFX where practical: Login, Dashboard, Workspace dialog, Card dialog
   Don't make fragile tests for every CSS detail.
 
 ### Threading
+
 JavaFX operations on FX Application Thread. DB/file/large Markdown work must not block it; use `Task`, `Service`, or `ExecutorService` when actually needed. Don't add async complexity without reason.
 
 ### CSS
+
 Major styling externalized:
 `app.css`, `login.css`, `dashboard.css`, `board.css`, `card.css`.
 Use semantic classes such as `.board-column`, `.card`, `.card-title`, `.card-description`, `.card-due-date`, `.card-due-today`, `.card-overdue`, `.card-completed`, `.workspace-item`. Java applies/removes classes; CSS controls appearance.
 
 ### Navigation
+
 Use a central `NavigationService` to switch views, preserve session, avoid duplicated navigation, and handle logout.
 Flow: `Application → Login → Dashboard → Workspace → Board → Card Dialog`.
 Logout: `Dashboard → SessionManager.logout() → Login`.
@@ -334,6 +378,7 @@ Backup-friendly:
 Future export/import only if requested.
 
 Security baseline:
+
 - hashed passwords; no plaintext/password logging
 - `PreparedStatement` everywhere
 - never concatenate user input into SQL
@@ -344,7 +389,9 @@ Security baseline:
 Performance target: personal/small-team datasets. Don't prematurely optimize; use useful indexes, avoid unnecessary loads/UI blocking, paginate later if needed, avoid repeatedly rendering huge Markdown or loading full-size images unnecessarily.
 
 ## 11. Definition of Done — Every Phase
+
 A phase is complete only if:
+
 - [ ] compiles
 - [ ] starts
 - [ ] feature manually works
@@ -358,6 +405,7 @@ A phase is complete only if:
 - [ ] user-facing errors are understandable
 
 ## 12. Exact Agent Workflow
+
 **Inspect:** project/classes/FXML/CSS/migrations/previous phase.
 **Plan:** files, DB changes, tests, expected behavior.
 **Implement:** current phase only.
@@ -365,6 +413,7 @@ A phase is complete only if:
 **Run:** `mvn javafx:run` or configured equivalent.
 **Verify:** phase checklist.
 **Report:**
+
 ```text
 Phase:
 Status:
@@ -379,10 +428,13 @@ Known issues:
 Files changed:
 - ...
 ```
+
 **STOP** and wait for explicit user confirmation, e.g. `Phase verified. Continue.`
 
 ## 13. Prohibited
+
 Do not:
+
 - implement multiple phases at once or skip verification
 - silently change architecture or replace SQLite without approval
 - add unnecessary frameworks
@@ -399,10 +451,12 @@ Do not:
 - continue without user confirmation
 
 ## 14. Future — Do Not Initially Implement
+
 Unless explicitly requested:
 multiple users/workspace roles/invitations, real-time collaboration, cloud sync, REST API, notifications/email, mobile app, calendar integration, recurring tasks, labels, comments, activity history, separate checklist entities, non-image attachments, full-text search, Kanban analytics.
 
 ## 15. Final Target
+
 ```text
 TASKBOARD
   Login
@@ -424,9 +478,11 @@ TASKBOARD
          ↓
       Renderer → JavaFX UI
 ```
+
 Result: lightweight desktop Trello alternative, maintainable as a JavaFX project.
 
 ## 16. First Instruction to Coding Agent
+
 > Read PLAN.md completely before changing anything.
 > Start with **Phase 0 only**.
 > Inspect the current repository first; if empty, create JavaFX Maven project using Java 21+.
@@ -438,6 +494,7 @@ Result: lightweight desktop Trello alternative, maintainable as a JavaFX project
 > Don't ask unnecessary questions; use reasonable defaults. Ask only for genuinely essential missing requirements before irreversible architecture decisions.
 
 ## 17. Progress Tracker
+
 ```text
 [x] Phase 0  — Project Foundation
 [x] Phase 1  — SQLite + Database Infrastructure
@@ -446,14 +503,16 @@ Result: lightweight desktop Trello alternative, maintainable as a JavaFX project
 [x] Phase 4  — Board + Kanban UI
 [x] Phase 5  — Card CRUD
 [x] Phase 6  — Due Dates (verified by user)
-[x] Phase 7  — Markdown (agent-verified; awaiting user verification)
-[ ] Phase 8  — Image Attachments
-[ ] Phase 9  — Drag & Drop
-[ ] Phase 10 — Production Hardening
+[x] Phase 7  — Markdown (verified by user)
+[x] Phase 8  — Image Attachments (verified by user)
+[x] Phase 9  — Drag & Drop (verified by user)
+[x] Phase 10 — Production Hardening (verified by user)
 ```
+
 Only mark a phase complete after user manual verification.
 
 ## 18. Success Criteria
+
 1. Reliable launch/login.
 2. Workspace create/edit/view/delete.
 3. Kanban board with four statuses.

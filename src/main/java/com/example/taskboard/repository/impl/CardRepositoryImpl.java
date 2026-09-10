@@ -15,11 +15,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collections;
 
 public class CardRepositoryImpl implements CardRepository {
 
-    private static final String COLUMNS =
-            "id, board_id, title, description, status, position, due_date, created_at, updated_at, completed_at";
+    private static final String COLUMNS = "id, board_id, title, description, status, position, due_date, created_at, updated_at, completed_at";
 
     private final DatabaseManager databaseManager;
 
@@ -116,6 +116,30 @@ public class CardRepositoryImpl implements CardRepository {
                 return card;
             } catch (SQLException e) {
                 throw new DatabaseException("Failed to update card", e);
+            }
+        });
+    }
+
+    @Override
+    public void reorder(long boardId, List<CardPlacement> placements) {
+        databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE cards SET status = ?, position = ?, updated_at = ?, completed_at = ? "
+                            + "WHERE id = ? AND board_id = ?")) {
+                for (CardPlacement placement : placements) {
+                    ps.setString(1, placement.status().getCode());
+                    ps.setDouble(2, placement.position());
+                    ps.setString(3, placement.updatedAt().toString());
+                    ps.setString(4, placement.completedAt() == null ? null : placement.completedAt().toString());
+                    ps.setLong(5, placement.cardId());
+                    ps.setLong(6, boardId);
+                    if (ps.executeUpdate() != 1) {
+                        throw new DatabaseException("Card reorder update did not affect exactly one row");
+                    }
+                }
+                return null;
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to reorder cards", e);
             }
         });
     }
