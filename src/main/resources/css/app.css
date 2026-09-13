@@ -208,30 +208,68 @@
     -fx-border-color: -app-accent;
 }
 
-.choice-box {
+.choice-box, .combo-box {
     -fx-background-color: -app-surface;
     -fx-border-color: -app-border;
+    -fx-border-width: 1px;
     -fx-border-radius: 6px;
     -fx-background-radius: 6px;
-    -fx-padding: 6px 8px;
-}
-
-.choice-box:focused {
-    -fx-border-color: -app-accent;
-}
-
-.choice-box .label {
+    -fx-padding: 4px 8px;
+    -fx-font-size: 13px;
     -fx-text-fill: -app-fg;
 }
 
-.choice-box .arrow-button {
+.choice-box:hover, .combo-box:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+}
+
+.choice-box:focused, .combo-box:focused {
+    -fx-border-color: -app-accent;
+    -fx-effect: dropshadow(gaussian, rgba(15, 118, 110, 0.2), 4, 0, 0, 0);
+}
+
+.choice-box .label, .combo-box .list-cell {
+    -fx-text-fill: -app-fg;
+    -fx-padding: 0;
     -fx-background-color: transparent;
-    -fx-text-fill: -app-fg-secondary;
+}
+
+.combo-box-base > .arrow-button, .choice-box > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 4px;
     -fx-cursor: hand;
 }
 
-.choice-box .arrow-button:hover {
+.combo-box-base > .arrow-button > .arrow, .choice-box > .arrow-button > .arrow {
+    -fx-background-color: -app-fg-secondary;
+}
+
+.combo-box-popup > .list-view {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-width: 1px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 4px;
+    -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.12), 10, 0, 0, 3);
+}
+
+.combo-box-popup > .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 6px 10px;
+    -fx-background-radius: 4px;
+    -fx-text-fill: -app-fg;
+    -fx-font-size: 13px;
+}
+
+.combo-box-popup > .list-view .list-cell:hover {
     -fx-background-color: #f1f5f9;
+}
+
+.combo-box-popup > .list-view .list-cell:selected {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e40af;
 }
 
 .choice-box .menu {
@@ -239,6 +277,7 @@
     -fx-border-color: -app-border;
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.12), 10, 0, 0, 3);
 }
 
 .choice-box .menu .list-cell {
@@ -260,27 +299,30 @@
     -fx-border-color: -app-border;
     -fx-border-radius: 6px;
     -fx-background-radius: 6px;
-    -fx-padding: 6px 8px;
+    -fx-padding: 4px 8px;
 }
 
 .date-picker:focused {
     -fx-border-color: -app-accent;
+    -fx-effect: dropshadow(gaussian, rgba(15, 118, 110, 0.2), 4, 0, 0, 0);
 }
 
 .date-picker .date-picker-text-field {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-padding: 0;
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-fg;
 }
 
 .date-picker .arrow-button {
     -fx-background-color: transparent;
-    -fx-text-fill: -app-fg-secondary;
+    -fx-padding: 0 4px;
     -fx-cursor: hand;
 }
 
-.date-picker .arrow-button:hover {
-    -fx-background-color: #f1f5f9;
+.date-picker .arrow-button .arrow {
+    -fx-background-color: -app-fg-secondary;
 }
 
 .date-picker .date-picker-popup {
@@ -288,4 +330,5 @@
     -fx-border-color: -app-border;
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.12), 10, 0, 0, 3);
 }

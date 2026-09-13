@@ -44,6 +44,7 @@ public class NavigationService {
     private final BoardService boardService;
     private final CardService cardService;
     private final ColumnService columnService;
+    private final TagService tagService;
     private final AttachmentService attachmentService;
     private final DueDateService dueDateService;
     private final MarkdownService markdownService;
@@ -57,6 +58,18 @@ public class NavigationService {
             DueDateService dueDateService,
             MarkdownService markdownService, HostServices hostServices,
             StorageConfigService storageConfigService) {
+        this(stage, authService, sessionManager, workspaceService, boardService, cardService, columnService, null,
+                attachmentService, dueDateService, markdownService, hostServices, storageConfigService);
+    }
+
+    public NavigationService(Stage stage, AuthService authService, SessionManager sessionManager,
+            WorkspaceService workspaceService, BoardService boardService,
+            CardService cardService, ColumnService columnService,
+            TagService tagService,
+            AttachmentService attachmentService,
+            DueDateService dueDateService,
+            MarkdownService markdownService, HostServices hostServices,
+            StorageConfigService storageConfigService) {
         this.stage = stage;
         this.authService = authService;
         this.sessionManager = sessionManager;
@@ -64,6 +77,7 @@ public class NavigationService {
         this.boardService = boardService;
         this.cardService = cardService;
         this.columnService = columnService;
+        this.tagService = tagService;
         this.attachmentService = attachmentService;
         this.dueDateService = dueDateService;
         this.markdownService = markdownService;
@@ -73,6 +87,10 @@ public class NavigationService {
 
     public ColumnService getColumnService() {
         return columnService;
+    }
+
+    public TagService getTagService() {
+        return tagService;
     }
 
     public AttachmentService getAttachmentService() {
@@ -206,7 +224,7 @@ public class NavigationService {
         }
         FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.BOARD_FXML));
         loader.setController(new BoardController(board, workspace, this, boardService, cardService,
-                columnService, attachmentService, dueDateService, markdownService, hostServices));
+                columnService, tagService, attachmentService, dueDateService, markdownService, hostServices));
         Parent root = loadRoot(loader, AppConfig.BOARD_FXML);
         showScene(root, AppConfig.BOARD_WINDOW_WIDTH, AppConfig.BOARD_WINDOW_HEIGHT,
                 AppConfig.BOARD_CSS, AppConfig.CARD_CSS);

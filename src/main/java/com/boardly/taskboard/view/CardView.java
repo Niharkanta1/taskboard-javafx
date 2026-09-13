@@ -1,22 +1,30 @@
 package com.boardly.taskboard.view;
 
 import com.boardly.taskboard.model.Card;
+import com.boardly.taskboard.model.CardPriority;
+import com.boardly.taskboard.model.CardSeverity;
 import com.boardly.taskboard.model.DueDateStatus;
+import com.boardly.taskboard.model.Tag;
 import com.boardly.taskboard.service.DueDateService;
 import com.boardly.taskboard.service.MarkdownService;
 
 import javafx.application.HostServices;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.Optional;
@@ -27,15 +35,13 @@ import java.util.function.Function;
  * Reusable card component used inside kanban columns.
  *
  * <p>
- * Shows the card title, description and due date. Clicking the card
- * (single or double click) opens the card editor through the provided
- * callback. All visual styling lives in card.css; the height is fixed so
- * every card is the same size: the title is truncated to two lines and
- * the description is clipped to a fixed viewport. The full content is
- * available in the card editor dialog.
+ * Shows the card title, priority, severity, tags, description and due date.
+ * Clicking the card opens the card editor through the provided callback.
  * </p>
  */
 public class CardView extends VBox {
+
+    private static final DateTimeFormatter CREATED_FORMAT = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
 
     /** Maximum number of lines the title may occupy on the board. */
     private static final int TITLE_MAX_LINES = 2;
@@ -84,12 +90,54 @@ public class CardView extends VBox {
         getStyleClass().add("card");
         setSpacing(4);
 
+        // Top Row: Priority Badge, Severity Badge, Spacer, Created Date
+        HBox topRow = new HBox(6);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        CardPriority priority = card.getPriority() != null ? card.getPriority() : CardPriority.MEDIUM;
+        Label priorityLabel = new Label(priority.getDisplayName());
+        priorityLabel.getStyleClass().addAll("card-badge", "priority-" + priority.name().toLowerCase(Locale.ROOT));
+
+        CardSeverity severity = card.getSeverity() != null ? card.getSeverity() : CardSeverity.MINOR;
+        Label severityLabel = new Label(severity.getDisplayName());
+        severityLabel.getStyleClass().addAll("card-badge", "severity-" + severity.name().toLowerCase(Locale.ROOT));
+
+        Region topSpacer = new Region();
+        HBox.setHgrow(topSpacer, Priority.ALWAYS);
+
+        String createdText = "";
+        if (card.getCreatedAt() != null) {
+            createdText = CREATED_FORMAT.format(card.getCreatedAt().atZone(ZoneId.systemDefault()));
+        }
+        Label createdLabel = new Label(createdText);
+        createdLabel.getStyleClass().add("card-created-date");
+
+        topRow.getChildren().addAll(priorityLabel, severityLabel, topSpacer, createdLabel);
+        getChildren().add(topRow);
+
+        // Title
         Label titleLabel = new Label(fitTitle(card.getTitle()));
         titleLabel.getStyleClass().add("card-title");
         titleLabel.setWrapText(true);
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         getChildren().add(titleLabel);
 
+        // Tags row
+        if (card.getTags() != null && !card.getTags().isEmpty()) {
+            FlowPane tagsPane = new FlowPane();
+            tagsPane.setHgap(4);
+            tagsPane.setVgap(4);
+            for (Tag tag : card.getTags()) {
+                Label tagLabel = new Label(tag.getName());
+                tagLabel.getStyleClass().add("card-tag");
+                String color = tag.getColor() != null ? tag.getColor() : "#0ea5e9";
+                tagLabel.setStyle("-fx-background-color: " + color + ";");
+                tagsPane.getChildren().add(tagLabel);
+            }
+            getChildren().add(tagsPane);
+        }
+
+        // Markdown Description Preview
         String description = card.getDescription();
         if (description != null && !description.isBlank()) {
             ScrollPane descScroll = new ScrollPane();
@@ -107,17 +155,20 @@ public class CardView extends VBox {
             getChildren().add(descScroll);
         }
 
-        // Flexible spacer keeps the due date pinned to the bottom of the card.
+        // Flexible spacer keeps the bottom metadata pinned
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
         getChildren().add(spacer);
 
+        // Bottom Row: Due date & attachment count
         DueDateStatus dueStatus = dueDateService.status(card.getDueDate(), card.isInFinalColumn());
         if (dueStatus != DueDateStatus.NONE || attachmentCount > 0) {
             HBox metadata = new HBox(8);
+            metadata.setAlignment(Pos.CENTER_LEFT);
             metadata.setMaxWidth(Double.MAX_VALUE);
             Region metadataSpacer = new Region();
             HBox.setHgrow(metadataSpacer, Priority.ALWAYS);
+
             Label dueLabel = new Label(dueDateService.displayText(dueStatus, card.getDueDate()));
             if (dueStatus != DueDateStatus.NONE) {
                 dueLabel.getStyleClass().add("card-due-date");

@@ -177,8 +177,27 @@ public class WorkspaceRepositoryImpl implements WorkspaceRepository {
         workspace.setOwnerUserId(rs.getLong("owner_user_id"));
         workspace.setName(rs.getString("name"));
         workspace.setDescription(rs.getString("description"));
-        workspace.setCreatedAt(Instant.parse(rs.getString("created_at")));
-        workspace.setUpdatedAt(Instant.parse(rs.getString("updated_at")));
+        workspace.setCreatedAt(parseInstant(rs.getString("created_at")));
+        workspace.setUpdatedAt(parseInstant(rs.getString("updated_at")));
         return workspace;
+    }
+
+    private static Instant parseInstant(String s) {
+        if (s == null || s.isBlank()) {
+            return Instant.now();
+        }
+        try {
+            return Instant.parse(s);
+        } catch (Exception e) {
+            String normalized = s.trim().replace(' ', 'T');
+            if (!normalized.endsWith("Z") && !normalized.contains("+") && normalized.indexOf('-', 10) < 0) {
+                normalized += "Z";
+            }
+            try {
+                return Instant.parse(normalized);
+            } catch (Exception ex) {
+                return Instant.now();
+            }
+        }
     }
 }

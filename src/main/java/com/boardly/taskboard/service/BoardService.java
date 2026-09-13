@@ -43,21 +43,31 @@ public class BoardService {
     private final CardRepository cardRepository;
     private final BoardColumnRepository columnRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final com.boardly.taskboard.repository.TagRepository tagRepository;
 
     public BoardService(BoardRepository boardRepository,
             CardRepository cardRepository,
             BoardColumnRepository columnRepository) {
-        this(boardRepository, cardRepository, columnRepository, null);
+        this(boardRepository, cardRepository, columnRepository, null, null);
     }
 
     public BoardService(BoardRepository boardRepository,
             CardRepository cardRepository,
             BoardColumnRepository columnRepository,
             WorkspaceRepository workspaceRepository) {
+        this(boardRepository, cardRepository, columnRepository, workspaceRepository, null);
+    }
+
+    public BoardService(BoardRepository boardRepository,
+            CardRepository cardRepository,
+            BoardColumnRepository columnRepository,
+            WorkspaceRepository workspaceRepository,
+            com.boardly.taskboard.repository.TagRepository tagRepository) {
         this.boardRepository = boardRepository;
         this.cardRepository = cardRepository;
         this.columnRepository = columnRepository;
         this.workspaceRepository = workspaceRepository;
+        this.tagRepository = tagRepository;
     }
 
     public Board createBoard(long workspaceId, String name, String description) {
@@ -115,8 +125,12 @@ public class BoardService {
             columnsById.put(column.getId(), column);
         }
         List<Card> cards = cardRepository != null ? cardRepository.findByBoard(id) : List.of();
+        Map<Long, List<com.boardly.taskboard.model.Tag>> tagsByCard = tagRepository != null
+                ? tagRepository.findTagsByBoard(id)
+                : Map.of();
         for (Card card : cards) {
             card.setColumn(columnsById.get(card.getBoardColumnId()));
+            card.setTags(tagsByCard.getOrDefault(card.getId(), List.of()));
         }
         board.setColumns(columns);
         board.setCards(cards);

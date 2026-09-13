@@ -8,7 +8,9 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -23,19 +25,42 @@
         <VBox styleClass="workspace-dialog" spacing="10">
             <Label styleClass="form-label" text="Title" />
             <TextField fx:id="titleField" promptText="Card title" />
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label styleClass="form-label" text="Column" />
-                <ChoiceBox fx:id="columnChoice" prefWidth="180" />
-                <Label styleClass="form-label" text="Due date" />
-                <DatePicker fx:id="dueDatePicker" />
+            
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label styleClass="form-label" text="Column" />
+                    <ChoiceBox fx:id="columnChoice" maxWidth="Infinity" />
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label styleClass="form-label" text="Priority" />
+                    <ChoiceBox fx:id="priorityChoice" maxWidth="Infinity" />
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label styleClass="form-label" text="Severity" />
+                    <ChoiceBox fx:id="severityChoice" maxWidth="Infinity" />
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label styleClass="form-label" text="Due Date" />
+                    <DatePicker fx:id="dueDatePicker" maxWidth="Infinity" />
+                </VBox>
             </HBox>
+
+            <VBox spacing="4">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label styleClass="form-label" text="Tags &amp; Labels" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="manageTagsButton" styleClass="column-action-button" text="⚙ Manage Tags" onAction="#onManageTags" />
+                </HBox>
+                <FlowPane fx:id="tagsFlowPane" hgap="8" vgap="6" styleClass="tags-container" style="-fx-padding: 2px 0;" />
+            </VBox>
+
             <Label styleClass="form-label" text="Description (Markdown)" />
             <HBox styleClass="description-mode-bar" spacing="8" alignment="CENTER_LEFT">
                 <Button fx:id="editButton" styleClass="mode-button" text="Edit" onAction="#onEditMode" />
                 <Button fx:id="previewButton" styleClass="mode-button" text="Preview" onAction="#onPreviewMode" />
                 <Button fx:id="attachButton" styleClass="mode-button" text="Attach Image" onAction="#onAttachImage" />
             </HBox>
-            <ScrollPane styleClass="dialog-scroll" fitToWidth="true" fitToHeight="true">
+            <ScrollPane styleClass="dialog-scroll" fitToWidth="true" fitToHeight="true" prefHeight="160">
                 <content>
                     <StackPane>
                         <TextArea fx:id="descriptionField" promptText="Markdown source" />

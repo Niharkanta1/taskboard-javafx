@@ -2,6 +2,8 @@ package com.boardly.taskboard.model;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A card inside a board.
@@ -24,6 +26,9 @@ public class Card {
     private Instant createdAt;
     private Instant updatedAt;
     private Instant completedAt;
+    private CardPriority priority = CardPriority.MEDIUM;
+    private CardSeverity severity = CardSeverity.MINOR;
+    private List<Tag> tags = new ArrayList<>();
 
     /** Transient: the column this card belongs to, set when a board is loaded. */
     private transient BoardColumn column;
@@ -33,12 +38,19 @@ public class Card {
 
     public Card(long boardId, long boardColumnId, String title, String description,
             double position, LocalDate dueDate) {
+        this(boardId, boardColumnId, title, description, position, dueDate, CardPriority.MEDIUM, CardSeverity.MINOR);
+    }
+
+    public Card(long boardId, long boardColumnId, String title, String description,
+            double position, LocalDate dueDate, CardPriority priority, CardSeverity severity) {
         this.boardId = boardId;
         this.boardColumnId = boardColumnId;
         this.title = title;
         this.description = description;
         this.position = position;
         this.dueDate = dueDate;
+        this.priority = priority != null ? priority : CardPriority.MEDIUM;
+        this.severity = severity != null ? severity : CardSeverity.MINOR;
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
@@ -47,6 +59,14 @@ public class Card {
     public Card(Long id, long boardId, long boardColumnId, String title, String description,
             double position, LocalDate dueDate,
             Instant createdAt, Instant updatedAt, Instant completedAt) {
+        this(id, boardId, boardColumnId, title, description, position, dueDate, createdAt, updatedAt, completedAt,
+                CardPriority.MEDIUM, CardSeverity.MINOR, new ArrayList<>());
+    }
+
+    public Card(Long id, long boardId, long boardColumnId, String title, String description,
+            double position, LocalDate dueDate,
+            Instant createdAt, Instant updatedAt, Instant completedAt,
+            CardPriority priority, CardSeverity severity, List<Tag> tags) {
         this.id = id == null ? 0 : id;
         this.boardId = boardId;
         this.boardColumnId = boardColumnId;
@@ -57,6 +77,9 @@ public class Card {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.completedAt = completedAt;
+        this.priority = priority != null ? priority : CardPriority.MEDIUM;
+        this.severity = severity != null ? severity : CardSeverity.MINOR;
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
     }
 
     public long getId() {
@@ -137,6 +160,30 @@ public class Card {
 
     public void setCompletedAt(Instant completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public CardPriority getPriority() {
+        return priority;
+    }
+
+    public void setPriority(CardPriority priority) {
+        this.priority = priority != null ? priority : CardPriority.MEDIUM;
+    }
+
+    public CardSeverity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(CardSeverity severity) {
+        this.severity = severity != null ? severity : CardSeverity.MINOR;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
     }
 
     public BoardColumn getColumn() {

@@ -8,6 +8,35 @@
     -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.04), 4, 0, 0, 1);
 }
 
+.toolbar-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg-secondary;
+}
+
+.search-field {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 6px 10px;
+    -fx-font-size: 13px;
+}
+
+.search-field:focused {
+    -fx-border-color: -app-accent;
+    -fx-effect: dropshadow(gaussian, rgba(15, 118, 110, 0.2), 4, 0, 0, 0);
+}
+
+.filter-combo {
+    -fx-pref-height: 33px;
+}
+
+.filter-date-picker {
+    -fx-pref-height: 33px;
+}
+
 .brand-header-breadcrumb {
     -fx-text-fill: #7b8581;
     -fx-font-size: 15px;

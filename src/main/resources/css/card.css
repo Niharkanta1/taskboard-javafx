@@ -42,6 +42,71 @@
 
 /* Due date pill styles (Phase 6) */
 
+.card-badge {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2px 6px;
+    -fx-background-radius: 4px;
+}
+
+.priority-low {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #475569;
+}
+
+.priority-medium {
+    -fx-background-color: #e0f2fe;
+    -fx-text-fill: #0369a1;
+}
+
+.priority-high {
+    -fx-background-color: #ffedd5;
+    -fx-text-fill: #c2410c;
+}
+
+.priority-urgent {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
+}
+
+.severity-low {
+    -fx-background-color: #f8fafc;
+    -fx-text-fill: #64748b;
+}
+
+.severity-minor {
+    -fx-background-color: #f3f4f6;
+    -fx-text-fill: #4b5563;
+}
+
+.severity-major {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #b45309;
+}
+
+.severity-critical {
+    -fx-background-color: #ffe4e6;
+    -fx-text-fill: #be123c;
+}
+
+.severity-blocker {
+    -fx-background-color: #fecaca;
+    -fx-text-fill: #991b1b;
+}
+
+.card-tag {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 1px 7px;
+    -fx-background-radius: 999px;
+    -fx-text-fill: white;
+}
+
+.card-created-date {
+    -fx-font-size: 10px;
+    -fx-text-fill: -app-fg-muted;
+}
+
 .card-due-date {
     -fx-font-size: 11px;
     -fx-padding: 2px 8px;

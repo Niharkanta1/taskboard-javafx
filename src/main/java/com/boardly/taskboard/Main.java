@@ -7,12 +7,14 @@ import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
 import com.boardly.taskboard.repository.CardAttachmentRepository;
+import com.boardly.taskboard.repository.TagRepository;
 import com.boardly.taskboard.repository.UserRepository;
 import com.boardly.taskboard.repository.WorkspaceRepository;
 import com.boardly.taskboard.repository.impl.BoardColumnRepositoryImpl;
 import com.boardly.taskboard.repository.impl.BoardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardAttachmentRepositoryImpl;
+import com.boardly.taskboard.repository.impl.TagRepositoryImpl;
 import com.boardly.taskboard.repository.impl.UserRepositoryImpl;
 import com.boardly.taskboard.repository.impl.WorkspaceRepositoryImpl;
 import com.boardly.taskboard.service.AuthService;
@@ -24,6 +26,7 @@ import com.boardly.taskboard.service.DevUserBootstrap;
 import com.boardly.taskboard.service.DueDateService;
 import com.boardly.taskboard.service.MarkdownService;
 import com.boardly.taskboard.service.NavigationService;
+import com.boardly.taskboard.service.TagService;
 import com.boardly.taskboard.service.WorkspaceService;
 import com.boardly.taskboard.service.StorageConfigService;
 import com.boardly.taskboard.session.SessionManager;
@@ -71,14 +74,16 @@ public class Main extends Application {
         UserRepository userRepository = new UserRepositoryImpl(databaseManager);
         WorkspaceRepository workspaceRepository = new WorkspaceRepositoryImpl(databaseManager);
         BoardRepository boardRepository = new BoardRepositoryImpl(databaseManager);
+        BoardColumnRepository columnRepository = new BoardColumnRepositoryImpl(databaseManager);
+        TagRepository tagRepository = new TagRepositoryImpl(databaseManager);
         CardRepository cardRepository = new CardRepositoryImpl(databaseManager);
         CardAttachmentRepository attachmentRepository = new CardAttachmentRepositoryImpl(databaseManager);
         AuthService authService = new AuthService(userRepository);
         WorkspaceService workspaceService = new WorkspaceService(workspaceRepository);
-        BoardColumnRepository columnRepository = new BoardColumnRepositoryImpl(databaseManager);
         BoardService boardService = new BoardService(boardRepository, cardRepository, columnRepository,
-                workspaceRepository);
-        CardService cardService = new CardService(cardRepository, boardRepository, columnRepository);
+                workspaceRepository, tagRepository);
+        CardService cardService = new CardService(cardRepository, boardRepository, columnRepository, tagRepository);
+        TagService tagService = new TagService(tagRepository);
         ColumnService columnService = new ColumnService(columnRepository, cardRepository, cardService);
         AttachmentService attachmentService = new AttachmentService(AppPaths.getAttachmentsPath(),
                 attachmentRepository);
@@ -87,7 +92,8 @@ public class Main extends Application {
         HostServices hostServices = getHostServices();
         SessionManager sessionManager = new SessionManager();
         NavigationService navigationService = new NavigationService(stage, authService, sessionManager,
-                workspaceService, boardService, cardService, columnService, attachmentService, dueDateService,
+                workspaceService, boardService, cardService, columnService, tagService, attachmentService,
+                dueDateService,
                 markdownService, hostServices, storageConfigService);
 
         if (Boolean.getBoolean("taskboard.release")) {

@@ -3,9 +3,13 @@ package com.boardly.taskboard.service;
 import com.boardly.taskboard.exception.ValidationException;
 import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
+import com.boardly.taskboard.model.CardPriority;
+import com.boardly.taskboard.model.CardSeverity;
+import com.boardly.taskboard.model.Tag;
 import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
+import com.boardly.taskboard.repository.TagRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,20 +41,33 @@ public class CardService {
     private final CardRepository cardRepository;
     private final BoardRepository boardRepository;
     private final BoardColumnRepository columnRepository;
+    private final TagRepository tagRepository;
 
     public CardService(CardRepository cardRepository, BoardRepository boardRepository,
-            BoardColumnRepository columnRepository) {
+            BoardColumnRepository columnRepository, TagRepository tagRepository) {
         this.cardRepository = cardRepository;
         this.boardRepository = boardRepository;
         this.columnRepository = columnRepository;
+        this.tagRepository = tagRepository;
+    }
+
+    public CardService(CardRepository cardRepository, BoardRepository boardRepository,
+            BoardColumnRepository columnRepository) {
+        this(cardRepository, boardRepository, columnRepository, null);
     }
 
     public CardService(CardRepository cardRepository, BoardColumnRepository columnRepository) {
-        this(cardRepository, null, columnRepository);
+        this(cardRepository, null, columnRepository, null);
     }
 
     public Card createCard(long boardId, String title, String description,
             long boardColumnId, LocalDate dueDate) {
+        return createCard(boardId, title, description, boardColumnId, dueDate, CardPriority.MEDIUM, CardSeverity.MINOR,
+                null);
+    }
+
+    public Card createCard(long boardId, String title, String description,
+            long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity, List<Long> tagIds) {
         if (boardId <= 0) {
             throw new ValidationException("Board id is required");
         }
@@ -65,14 +82,28 @@ public class CardService {
         Instant now = Instant.now();
         Instant completedAt = col.isFinal() ? now : null;
         Card card = new Card(null, boardId, boardColumnId, trimmedTitle, trimmedDesc,
-                position, dueDate, now, now, completedAt);
+                position, dueDate, now, now, completedAt,
+                priority != null ? priority : CardPriority.MEDIUM,
+                severity != null ? severity : CardSeverity.MINOR,
+                null);
         Card saved = cardRepository.insert(card);
+        if (tagRepository != null && tagIds != null) {
+            tagRepository.setCardTags(saved.getId(), tagIds);
+            saved.setTags(tagRepository.findByCardId(saved.getId()));
+        }
         logger.info("Created card '{}' (id={}) in column {}", saved.getTitle(), saved.getId(), boardColumnId);
         return saved;
     }
 
     public Card updateCard(long id, String title, String description,
             long boardColumnId, LocalDate dueDate) {
+        Card existing = requireCard(id);
+        return updateCard(id, title, description, boardColumnId, dueDate, existing.getPriority(),
+                existing.getSeverity(), null);
+    }
+
+    public Card updateCard(long id, String title, String description,
+            long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity, List<Long> tagIds) {
         Card existing = requireCard(id);
         BoardColumn col = requireColumn(boardColumnId);
         String trimmedTitle = requireTitle(title);
@@ -93,8 +124,17 @@ public class CardService {
         Instant now = Instant.now();
         Card updated = new Card(existing.getId(), existing.getBoardId(), boardColumnId,
                 trimmedTitle, trimmedDesc, existing.getPosition(), dueDate,
-                existing.getCreatedAt(), now, completedAt);
+                existing.getCreatedAt(), now, completedAt,
+                priority != null ? priority : existing.getPriority(),
+                severity != null ? severity : existing.getSeverity(),
+                existing.getTags());
         Card saved = cardRepository.update(updated);
+        if (tagRepository != null && tagIds != null) {
+            tagRepository.setCardTags(saved.getId(), tagIds);
+            saved.setTags(tagRepository.findByCardId(saved.getId()));
+        } else if (tagRepository != null) {
+            saved.setTags(tagRepository.findByCardId(saved.getId()));
+        }
         logger.info("Updated card '{}' (id={})", saved.getTitle(), saved.getId());
         return saved;
     }

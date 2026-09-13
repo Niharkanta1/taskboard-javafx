@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Applies Flyway database migrations from {@code classpath:db/migration}.
  *
- * <p>Safe to call on every application start: already-applied migrations
- * are recorded in the schema history table and skipped.</p>
+ * <p>
+ * Safe to call on every application start: already-applied migrations
+ * are recorded in the schema history table and skipped.
+ * </p>
  */
 public final class MigrationManager {
 
@@ -32,8 +34,16 @@ public final class MigrationManager {
             int applied = flyway.migrate().migrationsExecuted;
             logger.info("Database migrations applied: {} change(s)", applied);
         } catch (FlywayException e) {
-            logger.error("Database migration failed", e);
-            throw new DatabaseException("Database migration failed", e);
+            logger.warn("Initial migration/validation encountered an issue; attempting schema repair: {}",
+                    e.getMessage());
+            try {
+                flyway.repair();
+                int applied = flyway.migrate().migrationsExecuted;
+                logger.info("Database migrations applied after repair: {} change(s)", applied);
+            } catch (FlywayException repairError) {
+                logger.error("Database migration failed after repair attempt", repairError);
+                throw new DatabaseException("Database migration failed", repairError);
+            }
         }
     }
 }

@@ -3,6 +3,8 @@ package com.boardly.taskboard.repository.impl;
 import com.boardly.taskboard.database.DatabaseManager;
 import com.boardly.taskboard.exception.DatabaseException;
 import com.boardly.taskboard.model.Card;
+import com.boardly.taskboard.model.CardPriority;
+import com.boardly.taskboard.model.CardSeverity;
 import com.boardly.taskboard.repository.CardRepository;
 
 import java.sql.PreparedStatement;
@@ -19,7 +21,7 @@ import java.util.Optional;
  */
 public class CardRepositoryImpl implements CardRepository {
 
-    private static final String COLUMNS = "id, board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at";
+    private static final String COLUMNS = "id, board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at, priority, severity";
 
     private final DatabaseManager databaseManager;
 
@@ -31,8 +33,8 @@ public class CardRepositoryImpl implements CardRepository {
     public Card insert(Card card) {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO cards (board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO cards (board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at, priority, severity) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     PreparedStatement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, card.getBoardId());
                 ps.setLong(2, card.getBoardColumnId());
@@ -43,6 +45,8 @@ public class CardRepositoryImpl implements CardRepository {
                 ps.setString(7, card.getCreatedAt().toString());
                 ps.setString(8, card.getUpdatedAt().toString());
                 ps.setString(9, card.getCompletedAt() == null ? null : card.getCompletedAt().toString());
+                ps.setString(10, card.getPriority() != null ? card.getPriority().name() : CardPriority.MEDIUM.name());
+                ps.setString(11, card.getSeverity() != null ? card.getSeverity().name() : CardSeverity.MINOR.name());
                 int rows = ps.executeUpdate();
                 if (rows != 1) {
                     throw new DatabaseException("Card insert did not affect exactly one row");
@@ -103,7 +107,7 @@ public class CardRepositoryImpl implements CardRepository {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
                     "UPDATE cards SET title = ?, description = ?, board_column_id = ?, position = ?, "
-                            + "due_date = ?, updated_at = ?, completed_at = ? WHERE id = ?")) {
+                            + "due_date = ?, updated_at = ?, completed_at = ?, priority = ?, severity = ? WHERE id = ?")) {
                 ps.setString(1, card.getTitle());
                 ps.setString(2, card.getDescription());
                 ps.setLong(3, card.getBoardColumnId());
@@ -111,7 +115,9 @@ public class CardRepositoryImpl implements CardRepository {
                 ps.setString(5, card.getDueDate() == null ? null : card.getDueDate().toString());
                 ps.setString(6, card.getUpdatedAt().toString());
                 ps.setString(7, card.getCompletedAt() == null ? null : card.getCompletedAt().toString());
-                ps.setLong(8, card.getId());
+                ps.setString(8, card.getPriority() != null ? card.getPriority().name() : CardPriority.MEDIUM.name());
+                ps.setString(9, card.getSeverity() != null ? card.getSeverity().name() : CardSeverity.MINOR.name());
+                ps.setLong(10, card.getId());
                 int rows = ps.executeUpdate();
                 if (rows != 1) {
                     throw new DatabaseException("Card update did not affect exactly one row: " + card.getId());
@@ -206,10 +212,39 @@ public class CardRepositoryImpl implements CardRepository {
         card.setPosition(rs.getDouble("position"));
         String dueDate = rs.getString("due_date");
         card.setDueDate(dueDate == null ? null : LocalDate.parse(dueDate));
-        card.setCreatedAt(Instant.parse(rs.getString("created_at")));
-        card.setUpdatedAt(Instant.parse(rs.getString("updated_at")));
+        card.setCreatedAt(parseInstant(rs.getString("created_at")));
+        card.setUpdatedAt(parseInstant(rs.getString("updated_at")));
         String completedAt = rs.getString("completed_at");
-        card.setCompletedAt(completedAt == null ? null : Instant.parse(completedAt));
+        card.setCompletedAt(completedAt == null ? null : parseInstant(completedAt));
+        try {
+            card.setPriority(CardPriority.fromCode(rs.getString("priority")));
+        } catch (Exception ignored) {
+            card.setPriority(CardPriority.MEDIUM);
+        }
+        try {
+            card.setSeverity(CardSeverity.fromCode(rs.getString("severity")));
+        } catch (Exception ignored) {
+            card.setSeverity(CardSeverity.MINOR);
+        }
         return card;
+    }
+
+    private static Instant parseInstant(String s) {
+        if (s == null || s.isBlank()) {
+            return Instant.now();
+        }
+        try {
+            return Instant.parse(s);
+        } catch (Exception e) {
+            String normalized = s.trim().replace(' ', 'T');
+            if (!normalized.endsWith("Z") && !normalized.contains("+") && normalized.indexOf('-', 10) < 0) {
+                normalized += "Z";
+            }
+            try {
+                return Instant.parse(normalized);
+            } catch (Exception ex) {
+                return Instant.now();
+            }
+        }
     }
 }

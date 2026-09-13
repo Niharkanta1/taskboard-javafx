@@ -150,7 +150,26 @@ public class BoardColumnRepositoryImpl implements BoardColumnRepository {
                 rs.getString(3),
                 rs.getDouble(4),
                 rs.getInt(5) == 1,
-                Instant.parse(rs.getString(6)),
-                Instant.parse(rs.getString(7)));
+                parseInstant(rs.getString(6)),
+                parseInstant(rs.getString(7)));
+    }
+
+    private static Instant parseInstant(String s) {
+        if (s == null || s.isBlank()) {
+            return Instant.now();
+        }
+        try {
+            return Instant.parse(s);
+        } catch (Exception e) {
+            String normalized = s.trim().replace(' ', 'T');
+            if (!normalized.endsWith("Z") && !normalized.contains("+") && normalized.indexOf('-', 10) < 0) {
+                normalized += "Z";
+            }
+            try {
+                return Instant.parse(normalized);
+            } catch (Exception ex) {
+                return Instant.now();
+            }
+        }
     }
 }

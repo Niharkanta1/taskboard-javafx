@@ -70,6 +70,12 @@ class ResourceSmokeTest {
     }
 
     @Test
+    void tagDialogFxmlExistsOnClasspath() {
+        assertNotNull(Main.class.getResource(AppConfig.TAG_DIALOG_FXML),
+                "TagDialog.fxml must exist on the classpath");
+    }
+
+    @Test
     void appCssExistsOnClasspath() {
         assertNotNull(Main.class.getResource(AppConfig.APP_CSS), "app.css must exist on the classpath");
     }
@@ -110,7 +116,8 @@ class ResourceSmokeTest {
                 AppConfig.BOARD_FXML,
                 AppConfig.BOARD_DIALOG_FXML,
                 AppConfig.CARD_DIALOG_FXML,
-                AppConfig.COLUMN_DIALOG_FXML);
+                AppConfig.COLUMN_DIALOG_FXML,
+                AppConfig.TAG_DIALOG_FXML);
         for (String fxml : fxmlViews) {
             URL url = Main.class.getResource(fxml);
             assertNotNull(url, fxml + " must exist on the classpath");
