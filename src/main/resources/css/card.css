@@ -2,19 +2,18 @@
 
 .card {
     -fx-background-color: -app-surface;
+    -fx-background-radius: 10px;
     -fx-border-color: -app-border;
     -fx-border-radius: 10px;
+    -fx-border-width: 1px;
     -fx-padding: 12px;
     -fx-cursor: hand;
-    /* Fixed height: every card is the same size and never grows with content. */
-    -fx-min-height: 190px;
-    -fx-pref-height: 190px;
-    -fx-max-height: 190px;
+    -fx-min-height: 120px;
 }
 
 .card:hover {
     -fx-border-color: #94a3b8;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 10, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 8, 0, 0, 2);
 }
 
 .card-title {
@@ -25,14 +24,18 @@
     -fx-max-height: 40px;
 }
 
-/* Fixed-height viewport for the description: only what fits is visible. */
+/* Viewport for the description: only what fits is visible without overflowing card boundaries. */
 .card-desc-scroll {
     -fx-background-color: transparent;
+    -fx-background: transparent;
     -fx-border-color: transparent;
     -fx-padding: 0;
-    -fx-min-height: 92px;
-    -fx-pref-height: 92px;
-    -fx-max-height: 92px;
+    -fx-min-height: 0;
+    -fx-max-height: 75px;
+}
+
+.card-desc-scroll > .viewport {
+    -fx-background-color: transparent;
 }
 
 .card-description {

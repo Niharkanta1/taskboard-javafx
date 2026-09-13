@@ -157,6 +157,7 @@ public class CardView extends VBox {
 
         // Flexible spacer keeps the bottom metadata pinned
         Region spacer = new Region();
+        spacer.setMinHeight(4);
         VBox.setVgrow(spacer, Priority.ALWAYS);
         getChildren().add(spacer);
 
