@@ -3,7 +3,6 @@ package com.boardly.taskboard.repository.impl;
 import com.boardly.taskboard.database.DatabaseManager;
 import com.boardly.taskboard.exception.DatabaseException;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.repository.CardRepository;
 
 import java.sql.PreparedStatement;
@@ -15,9 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * SQLite implementation of {@link CardRepository}.
+ */
 public class CardRepositoryImpl implements CardRepository {
 
-    private static final String COLUMNS = "id, board_id, title, description, status, position, due_date, created_at, updated_at, completed_at";
+    private static final String COLUMNS = "id, board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at";
 
     private final DatabaseManager databaseManager;
 
@@ -29,13 +31,13 @@ public class CardRepositoryImpl implements CardRepository {
     public Card insert(Card card) {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO cards (board_id, title, description, status, position, due_date, created_at, updated_at, completed_at) "
+                    "INSERT INTO cards (board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at) "
                             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     PreparedStatement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, card.getBoardId());
-                ps.setString(2, card.getTitle());
-                ps.setString(3, card.getDescription());
-                ps.setString(4, card.getStatus().getCode());
+                ps.setLong(2, card.getBoardColumnId());
+                ps.setString(3, card.getTitle());
+                ps.setString(4, card.getDescription());
                 ps.setDouble(5, card.getPosition());
                 ps.setString(6, card.getDueDate() == null ? null : card.getDueDate().toString());
                 ps.setString(7, card.getCreatedAt().toString());
@@ -46,8 +48,11 @@ public class CardRepositoryImpl implements CardRepository {
                     throw new DatabaseException("Card insert did not affect exactly one row");
                 }
                 try (ResultSet keys = ps.getGeneratedKeys()) {
-                    keys.next();
-                    card.setId(keys.getLong(1));
+                    if (keys.next()) {
+                        card.setId(keys.getLong(1));
+                    } else {
+                        throw new DatabaseException("Card insert did not return a generated key");
+                    }
                 }
                 return card;
             } catch (SQLException e) {
@@ -78,7 +83,7 @@ public class CardRepositoryImpl implements CardRepository {
     public List<Card> findByBoard(long boardId) {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT " + COLUMNS + " FROM cards WHERE board_id = ? ORDER BY position, id")) {
+                    "SELECT " + COLUMNS + " FROM cards WHERE board_id = ? ORDER BY position ASC, id ASC")) {
                 ps.setLong(1, boardId);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<Card> cards = new ArrayList<>();
@@ -88,7 +93,7 @@ public class CardRepositoryImpl implements CardRepository {
                     return cards;
                 }
             } catch (SQLException e) {
-                throw new DatabaseException("Failed to list cards for board", e);
+                throw new DatabaseException("Failed to find cards for board", e);
             }
         });
     }
@@ -97,11 +102,11 @@ public class CardRepositoryImpl implements CardRepository {
     public Card update(Card card) {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE cards SET title = ?, description = ?, status = ?, position = ?, "
+                    "UPDATE cards SET title = ?, description = ?, board_column_id = ?, position = ?, "
                             + "due_date = ?, updated_at = ?, completed_at = ? WHERE id = ?")) {
                 ps.setString(1, card.getTitle());
                 ps.setString(2, card.getDescription());
-                ps.setString(3, card.getStatus().getCode());
+                ps.setLong(3, card.getBoardColumnId());
                 ps.setDouble(4, card.getPosition());
                 ps.setString(5, card.getDueDate() == null ? null : card.getDueDate().toString());
                 ps.setString(6, card.getUpdatedAt().toString());
@@ -109,7 +114,7 @@ public class CardRepositoryImpl implements CardRepository {
                 ps.setLong(8, card.getId());
                 int rows = ps.executeUpdate();
                 if (rows != 1) {
-                    throw new DatabaseException("Card update did not affect exactly one row");
+                    throw new DatabaseException("Card update did not affect exactly one row: " + card.getId());
                 }
                 return card;
             } catch (SQLException e) {
@@ -119,36 +124,12 @@ public class CardRepositoryImpl implements CardRepository {
     }
 
     @Override
-    public void reorder(long boardId, List<CardPlacement> placements) {
-        databaseManager.inTransaction(connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE cards SET status = ?, position = ?, updated_at = ?, completed_at = ? "
-                            + "WHERE id = ? AND board_id = ?")) {
-                for (CardPlacement placement : placements) {
-                    ps.setString(1, placement.status().getCode());
-                    ps.setDouble(2, placement.position());
-                    ps.setString(3, placement.updatedAt().toString());
-                    ps.setString(4, placement.completedAt() == null ? null : placement.completedAt().toString());
-                    ps.setLong(5, placement.cardId());
-                    ps.setLong(6, boardId);
-                    if (ps.executeUpdate() != 1) {
-                        throw new DatabaseException("Card reorder update did not affect exactly one row");
-                    }
-                }
-                return null;
-            } catch (SQLException e) {
-                throw new DatabaseException("Failed to reorder cards", e);
-            }
-        });
-    }
-
-    @Override
-    public int delete(long id) {
+    public boolean delete(long id) {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
                     "DELETE FROM cards WHERE id = ?")) {
                 ps.setLong(1, id);
-                return ps.executeUpdate();
+                return ps.executeUpdate() > 0;
             } catch (SQLException e) {
                 throw new DatabaseException("Failed to delete card", e);
             }
@@ -160,11 +141,57 @@ public class CardRepositoryImpl implements CardRepository {
         return databaseManager.inTransaction(connection -> {
             try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM cards")) {
                 try (ResultSet rs = ps.executeQuery()) {
-                    rs.next();
-                    return rs.getLong(1);
+                    return rs.next() ? rs.getLong(1) : 0;
                 }
             } catch (SQLException e) {
                 throw new DatabaseException("Failed to count cards", e);
+            }
+        });
+    }
+
+    @Override
+    public void reorder(long boardId, List<CardPlacement> placements) {
+        databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE cards SET board_column_id = ?, position = ?, updated_at = ?, completed_at = ? "
+                            + "WHERE id = ? AND board_id = ?")) {
+                for (CardPlacement placement : placements) {
+                    ps.setLong(1, placement.boardColumnId());
+                    ps.setDouble(2, placement.position());
+                    ps.setString(3, placement.updatedAt().toString());
+                    ps.setString(4, placement.completedAt() == null ? null : placement.completedAt().toString());
+                    ps.setLong(5, placement.cardId());
+                    ps.setLong(6, boardId);
+                    if (ps.executeUpdate() != 1) {
+                        throw new DatabaseException(
+                                "Card reorder update did not affect exactly one row: " + placement.cardId());
+                    }
+                }
+                return null;
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to reorder cards", e);
+            }
+        });
+    }
+
+    @Override
+    public void reorder(CardPlacement placement) {
+        databaseManager.inTransaction(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE cards SET board_column_id = ?, position = ?, updated_at = ?, completed_at = ? "
+                            + "WHERE id = ?")) {
+                ps.setLong(1, placement.boardColumnId());
+                ps.setDouble(2, placement.position());
+                ps.setString(3, placement.updatedAt().toString());
+                ps.setString(4, placement.completedAt() == null ? null : placement.completedAt().toString());
+                ps.setLong(5, placement.cardId());
+                if (ps.executeUpdate() != 1) {
+                    throw new DatabaseException(
+                            "Card reorder update did not affect exactly one row: " + placement.cardId());
+                }
+                return null;
+            } catch (SQLException e) {
+                throw new DatabaseException("Failed to reorder card", e);
             }
         });
     }
@@ -173,9 +200,9 @@ public class CardRepositoryImpl implements CardRepository {
         Card card = new Card();
         card.setId(rs.getLong("id"));
         card.setBoardId(rs.getLong("board_id"));
+        card.setBoardColumnId(rs.getLong("board_column_id"));
         card.setTitle(rs.getString("title"));
         card.setDescription(rs.getString("description"));
-        card.setStatus(CardStatus.fromCode(rs.getString("status")));
         card.setPosition(rs.getDouble("position"));
         String dueDate = rs.getString("due_date");
         card.setDueDate(dueDate == null ? null : LocalDate.parse(dueDate));

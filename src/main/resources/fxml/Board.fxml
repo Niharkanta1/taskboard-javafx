@@ -2,76 +2,50 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml/1">
 
     <top>
-        <VBox styleClass="board-header" spacing="4">
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <ImageView fitHeight="24" fitWidth="24" preserveRatio="true">
+        <VBox spacing="0">
+            <HBox styleClass="brand-header" spacing="10" alignment="CENTER_LEFT">
+                <ImageView fitHeight="28" fitWidth="28" preserveRatio="true">
                     <image><Image url="/branding/boardly.png" /></image>
                 </ImageView>
-                <Label styleClass="board-brand" text="Boardly" />
+                <Label styleClass="app-title" text="Boardly" />
+                <Label styleClass="brand-header-breadcrumb" text="›" />
+                <Label fx:id="workspaceLabel" styleClass="brand-header-subtitle" text="" />
+                <Label styleClass="brand-header-breadcrumb" text="›" />
+                <Label fx:id="boardTitleLabel" styleClass="brand-header-title" text="" />
             </HBox>
-            <Label fx:id="workspaceLabel" styleClass="board-workspace" text="" />
-            <Label fx:id="boardLabel" styleClass="board-title" text="" />
+            <HBox styleClass="board-toolbar" spacing="10" alignment="CENTER_LEFT">
+                <Button fx:id="backButton" styleClass="dashboard-button" text="← Back to Workspace"
+                       onAction="#onBack" />
+                <Button fx:id="addColumnButton" styleClass="dashboard-button"
+                       text="+ Add Column" onAction="#onAddColumn" />
+            </HBox>
         </VBox>
     </top>
 
     <center>
-        <ScrollPane styleClass="board-scroll" fitToWidth="true">
-            <HBox styleClass="board-columns" spacing="8" fillHeight="true">
-                <VBox fx:id="plannedColumn" styleClass="board-column col-planned" spacing="8">
-                    <HBox styleClass="board-column-header-row" spacing="8" alignment="CENTER_LEFT">
-                        <Label styleClass="board-column-header" text="Planned" />
-                        <Button fx:id="plannedNewCardButton" styleClass="new-card-button"
-                              text="New Card" onAction="#onNewCard" />
-                    </HBox>
-                    <VBox fx:id="plannedCards" styleClass="board-column-cards" spacing="8" />
-                </VBox>
-                <Region styleClass="board-divider" />
-                <VBox fx:id="inProgressColumn" styleClass="board-column col-in-progress" spacing="8">
-                    <HBox styleClass="board-column-header-row" spacing="8" alignment="CENTER_LEFT">
-                        <Label styleClass="board-column-header" text="In Progress" />
-                        <Button fx:id="inProgressNewCardButton" styleClass="new-card-button"
-                              text="New Card" onAction="#onNewCard" />
-                    </HBox>
-                    <VBox fx:id="inProgressCards" styleClass="board-column-cards" spacing="8" />
-                </VBox>
-                <Region styleClass="board-divider" />
-                <VBox fx:id="completedColumn" styleClass="board-column col-completed" spacing="8">
-                    <HBox styleClass="board-column-header-row" spacing="8" alignment="CENTER_LEFT">
-                        <Label styleClass="board-column-header" text="Completed" />
-                        <Button fx:id="completedNewCardButton" styleClass="new-card-button"
-                              text="New Card" onAction="#onNewCard" />
-                    </HBox>
-                    <VBox fx:id="completedCards" styleClass="board-column-cards" spacing="8" />
-                </VBox>
-                <Region styleClass="board-divider" />
-                <VBox fx:id="closedColumn" styleClass="board-column col-closed" spacing="8">
-                    <HBox styleClass="board-column-header-row" spacing="8" alignment="CENTER_LEFT">
-                        <Label styleClass="board-column-header" text="Closed" />
-                        <Button fx:id="closedNewCardButton" styleClass="new-card-button"
-                              text="New Card" onAction="#onNewCard" />
-                    </HBox>
-                    <VBox fx:id="closedCards" styleClass="board-column-cards" spacing="8" />
-                </VBox>
-            </HBox>
+        <ScrollPane fx:id="boardScrollPane" styleClass="board-scroll" fitToHeight="true">
+            <content>
+                <HBox fx:id="boardColumns" styleClass="board-columns" spacing="16"
+                     alignment="CENTER_LEFT" />
+            </content>
         </ScrollPane>
     </center>
 
     <bottom>
-        <HBox styleClass="board-footer" spacing="8" alignment="CENTER_LEFT">
-            <Button fx:id="backButton" styleClass="dashboard-button"
-                   text="Back to Workspace" onAction="#onBack" />
+        <HBox styleClass="board-footer" spacing="16" alignment="CENTER_LEFT">
+            <Button fx:id="statusOfNewCardButton" styleClass="dashboard-button" text="+ Add Card" onAction="#onAddCard" />
+            <Label fx:id="footerLabel" styleClass="board-footer-label" text="" />
         </HBox>
     </bottom>
 

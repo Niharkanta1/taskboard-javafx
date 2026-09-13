@@ -3,20 +3,19 @@ package com.boardly.taskboard.controller;
 import com.boardly.taskboard.config.AppConfig;
 import com.boardly.taskboard.exception.AppException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.Workspace;
-import com.boardly.taskboard.service.BoardService;
 import com.boardly.taskboard.service.AttachmentService;
+import com.boardly.taskboard.service.BoardService;
 import com.boardly.taskboard.service.CardService;
+import com.boardly.taskboard.service.ColumnService;
 import com.boardly.taskboard.service.DueDateService;
 import com.boardly.taskboard.service.MarkdownService;
 import com.boardly.taskboard.service.NavigationService;
-import com.boardly.taskboard.view.CardView;
+import com.boardly.taskboard.view.ColumnView;
 
 import javafx.application.HostServices;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -24,50 +23,40 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.image.WritableImage;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * Board view: Trello-like kanban columns for the four card statuses.
+ * Kanban board view with dynamic, user-managed columns.
  *
  * <p>
- * Phase 5: cards can be created per column, edited by clicking a
- * card, and deleted from the card editor. Phase 6: cards show their
- * due date with a semantic CSS class. Phase 7: card descriptions are
- * rendered as Markdown (headings, lists, code, links, task lists) and
- * task-list checkboxes toggle and persist. Card business rules live in
- * {@link CardService}, {@link DueDateService} and
- * {@link MarkdownService}; styling lives in board.css and card.css.
+ * Columns are rendered from the persisted board column configuration;
+ * users can add, rename, delete, and drag-and-drop reorder columns.
+ * Cards can be dragged between columns and reordered within a column.
  * </p>
  */
 public class BoardController {
 
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
 
+    private static final String CARD_DRAG_PREFIX = "card:";
+    private static final String COLUMN_DRAG_PREFIX = "column:";
+
     private Board board;
     private final Workspace workspace;
     private final NavigationService navigationService;
     private final BoardService boardService;
     private final CardService cardService;
+    private final ColumnService columnService;
     private final AttachmentService attachmentService;
     private final DueDateService dueDateService;
     private final MarkdownService markdownService;
@@ -77,49 +66,26 @@ public class BoardController {
     private Label workspaceLabel;
 
     @FXML
-    private Label boardLabel;
+    private Label boardTitleLabel;
 
     @FXML
-    private VBox plannedColumn;
+    private Button backButton;
 
     @FXML
-    private VBox inProgressColumn;
+    private Button addColumnButton;
 
     @FXML
-    private VBox completedColumn;
+    private HBox boardColumns;
 
     @FXML
-    private VBox closedColumn;
+    private Button statusOfNewCardButton;
 
     @FXML
-    private VBox plannedCards;
+    private Label footerLabel;
 
-    @FXML
-    private VBox inProgressCards;
-
-    @FXML
-    private VBox completedCards;
-
-    @FXML
-    private VBox closedCards;
-
-    @FXML
-    private Button plannedNewCardButton;
-
-    @FXML
-    private Button inProgressNewCardButton;
-
-    @FXML
-    private Button completedNewCardButton;
-
-    @FXML
-    private Button closedNewCardButton;
-
-    public BoardController(Board board,
-            Workspace workspace,
-            NavigationService navigationService,
-            BoardService boardService,
-            CardService cardService,
+    public BoardController(Board board, Workspace workspace, NavigationService navigationService,
+            BoardService boardService, CardService cardService,
+            ColumnService columnService,
             AttachmentService attachmentService,
             DueDateService dueDateService,
             MarkdownService markdownService,
@@ -129,6 +95,7 @@ public class BoardController {
         this.navigationService = navigationService;
         this.boardService = boardService;
         this.cardService = cardService;
+        this.columnService = columnService;
         this.attachmentService = attachmentService;
         this.dueDateService = dueDateService;
         this.markdownService = markdownService;
@@ -137,213 +104,285 @@ public class BoardController {
 
     @FXML
     private void initialize() {
-        workspaceLabel.setText("Workspace: " + workspace.getName());
-        boardLabel.setText(board.getName());
-
-        layoutColumns();
-        configureDropTarget(plannedCards, plannedColumn, CardStatus.PLANNED);
-        configureDropTarget(inProgressCards, inProgressColumn, CardStatus.IN_PROGRESS);
-        configureDropTarget(completedCards, completedColumn, CardStatus.COMPLETED);
-        configureDropTarget(closedCards, closedColumn, CardStatus.CLOSED);
-        refreshBoard();
+        if (workspace != null && workspaceLabel != null) {
+            workspaceLabel.setText(workspace.getName());
+        }
+        if (board != null && boardTitleLabel != null) {
+            boardTitleLabel.setText(board.getName());
+        }
+        if (backButton != null) {
+            backButton.setOnAction(e -> onBack());
+        }
+        if (addColumnButton != null) {
+            addColumnButton.setOnAction(e -> onAddColumn());
+        }
+        if (footerLabel != null) {
+            footerLabel.setText("Tip: drag cards between columns, and drag a column header to reorder it.");
+        }
+        renderColumns();
     }
 
     @FXML
     private void onBack() {
-        navigationService.showWorkspace(workspace);
+        if (navigationService != null && workspace != null) {
+            navigationService.showWorkspace(workspace);
+        }
     }
 
+    /**
+     * FXML handler for the footer "Add Card" button: opens the card dialog
+     * for the first column of the board.
+     */
     @FXML
-    private void onNewCard(Event event) {
-        CardStatus status = statusOfNewCardButton((Button) event.getSource());
-        if (status != null) {
-            showCardDialog(null, status);
+    private void onAddCard() {
+        List<BoardColumn> columns = board.getColumns();
+        if (columns.isEmpty()) {
+            return;
         }
+        onAddCard(columns.get(0));
     }
 
-    private void refreshBoard() {
-        try {
-            board = boardService.loadBoard(board.getId());
-        } catch (AppException e) {
-            logger.error("Failed to refresh board {}", board.getId(), e);
+    /**
+     * Rebuilds the column views from the persisted board state.
+     */
+    private void renderColumns() {
+        if (boardService != null && board != null) {
+            try {
+                board = boardService.loadBoard(board.getId());
+            } catch (AppException e) {
+                logger.error("Failed to load board {}", board.getId(), e);
+                return;
+            }
         }
+        if (board == null || boardColumns == null) {
+            return;
+        }
+        boardColumns.getChildren().clear();
+        List<BoardColumn> columns = board.getColumns() != null ? board.getColumns() : List.of();
+        List<Card> cards = board.getCards() != null ? board.getCards() : List.of();
+        for (BoardColumn column : columns) {
+            List<Card> columnCards = cards.stream()
+                    .filter(card -> card.getBoardColumnId() == column.getId())
+                    .collect(Collectors.toList());
 
-        Map<CardStatus, List<Card>> cardsByStatus = groupCardsByStatus();
-        plannedCards.getChildren().setAll(cardViews(cardsByStatus.get(CardStatus.PLANNED)));
-        inProgressCards.getChildren().setAll(cardViews(cardsByStatus.get(CardStatus.IN_PROGRESS)));
-        completedCards.getChildren().setAll(cardViews(cardsByStatus.get(CardStatus.COMPLETED)));
-        closedCards.getChildren().setAll(cardViews(cardsByStatus.get(CardStatus.CLOSED)));
-    }
+            ColumnView columnView = new ColumnView(column, columnCards, markdownService,
+                    dueDateService,
+                    () -> onAddCard(column),
+                    () -> onRenameColumn(column),
+                    () -> onDeleteColumn(column),
+                    card -> onCardClick(card),
+                    (card, taskIndex) -> toggleCardTask(card, taskIndex),
+                    hostServices,
+                    attachmentService != null ? attachmentService::resolveById : null,
+                    attachmentService != null ? attachmentService::countForCard : null);
 
-    private void openCardEditor(Card card) {
-        showCardDialog(card, card.getStatus());
+            // Drag over: accept column reorder or card move
+            columnView.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasString()) {
+                    String content = db.getString();
+                    if (content.startsWith(COLUMN_DRAG_PREFIX)) {
+                        long draggedId = Long.parseLong(content.substring(COLUMN_DRAG_PREFIX.length()));
+                        if (draggedId != column.getId()) {
+                            event.acceptTransferModes(TransferMode.MOVE);
+                            columnView.setDropTarget(true);
+                        }
+                    } else if (content.startsWith(CARD_DRAG_PREFIX)) {
+                        event.acceptTransferModes(TransferMode.MOVE);
+                        columnView.setDropTarget(true);
+                    }
+                }
+                event.consume();
+            });
+
+            columnView.setOnDragExited(event -> {
+                columnView.setDropTarget(false);
+                event.consume();
+            });
+
+            columnView.setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+                columnView.setDropTarget(false);
+                if (db.hasString()) {
+                    String content = db.getString();
+                    if (content.startsWith(COLUMN_DRAG_PREFIX)) {
+                        long draggedId = Long.parseLong(content.substring(COLUMN_DRAG_PREFIX.length()));
+                        if (draggedId != column.getId()) {
+                            try {
+                                int targetIndex = columnViewIndex(columnView);
+                                columnService.moveColumn(draggedId, targetIndex);
+                                renderColumns();
+                                success = true;
+                            } catch (AppException e) {
+                                showErrorMessage(e);
+                            }
+                        }
+                    } else if (content.startsWith(CARD_DRAG_PREFIX)) {
+                        long cardId = Long.parseLong(content.substring(CARD_DRAG_PREFIX.length()));
+                        try {
+                            int index = cardIndexInColumn(column, cardId);
+                            cardService.moveCard(cardId, column.getId(),
+                                    index < 0 ? columnCards.size() + 1 : index + 1);
+                            renderColumns();
+                            success = true;
+                        } catch (AppException e) {
+                            showErrorMessage(e);
+                        }
+                    }
+                }
+                event.setDropCompleted(success);
+                event.consume();
+            });
+
+            boardColumns.getChildren().add(columnView);
+        }
     }
 
     private void toggleCardTask(Card card, int taskIndex) {
         try {
             String updatedDescription = markdownService.toggleTask(card.getDescription(), taskIndex);
             cardService.updateCard(card.getId(), card.getTitle(), updatedDescription,
-                    card.getStatus(), card.getDueDate());
-            refreshBoard();
+                    card.getBoardColumnId(), card.getDueDate());
+            renderColumns();
         } catch (AppException e) {
-            logger.error("Failed to toggle task on card {}", card.getId(), e);
-            showFailure("Unable to update the card. Please try again.");
+            logger.error("Failed to toggle task in card {}", card.getId(), e);
+            showErrorMessage(e);
         }
     }
 
-    private void showCardDialog(Card existing, CardStatus defaultStatus) {
+    /**
+     * 1-based index of the column in the board, used when dropping a dragged
+     * column.
+     */
+    private int columnViewIndex(ColumnView columnView) {
+        List<javafx.scene.Node> children = boardColumns.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            if (children.get(i) == columnView) {
+                return i + 1;
+            }
+        }
+        return children.size();
+    }
+
+    /**
+     * 0-based index of the card within its column, or -1 if the card is
+     * not in this column.
+     */
+    private int cardIndexInColumn(BoardColumn column, long cardId) {
+        List<Card> columnCards = board.getCards().stream()
+                .filter(card -> card.getBoardColumnId() == column.getId())
+                .collect(Collectors.toList());
+        for (int i = 0; i < columnCards.size(); i++) {
+            if (columnCards.get(i).getId() == cardId) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void onAddCard(BoardColumn column) {
+        showCardDialog("New Card",
+                dialogStage -> new CardDialogController(cardService, board.getId(), null, column, this::renderColumns,
+                        dialogStage, markdownService, hostServices, attachmentService));
+    }
+
+    @FXML
+    private void onAddColumn() {
+        showColumnDialog("New Column",
+                dialogStage -> new ColumnDialogController(columnService, dialogStage, board.getId(), null, null, null,
+                        this::renderColumns));
+    }
+
+    private void onRenameColumn(BoardColumn column) {
+        showColumnDialog("Rename Column",
+                dialogStage -> new ColumnDialogController(columnService, dialogStage, board.getId(), column, null, null,
+                        this::renderColumns));
+    }
+
+    private void onDeleteColumn(BoardColumn column) {
+        if (board.getColumns().size() <= BoardService.MIN_COLUMNS_PER_BOARD) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.initOwner(navigationService.getStage());
+            alert.setTitle("Cannot Delete Column");
+            alert.setHeaderText("Minimum column limit reached");
+            alert.setContentText("A board must have at least " + BoardService.MIN_COLUMNS_PER_BOARD + " columns.");
+            alert.showAndWait();
+            return;
+        }
+        List<BoardColumn> targetColumns = board.getColumns().stream()
+                .filter(c -> !c.getId().equals(column.getId()))
+                .collect(Collectors.toList());
+        showColumnDialog("Delete Column",
+                dialogStage -> new ColumnDialogController(columnService, dialogStage, board.getId(), null, column,
+                        targetColumns,
+                        this::renderColumns));
+    }
+
+    private void onCardClick(Card card) {
+        showCardDialog("Edit Card",
+                dialogStage -> new CardDialogController(cardService, board.getId(), card, card.getColumn(),
+                        this::renderColumns,
+                        dialogStage, markdownService, hostServices, attachmentService));
+    }
+
+    private boolean showColumnDialog(String title,
+            java.util.function.Function<Stage, ColumnDialogController> controllerFactory) {
+        try {
+            FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.COLUMN_DIALOG_FXML));
+            Stage dialogStage = new Stage();
+            ColumnDialogController controller = controllerFactory.apply(dialogStage);
+            loader.setController(controller);
+            Parent root = loader.load();
+            Scene scene = new Scene(root, AppConfig.COLUMN_DIALOG_WIDTH, AppConfig.COLUMN_DIALOG_HEIGHT);
+            scene.getStylesheets().add(resolveResource(AppConfig.APP_CSS).toExternalForm());
+            scene.getStylesheets().add(resolveResource(AppConfig.BOARD_CSS).toExternalForm());
+            scene.getStylesheets().add(resolveResource(AppConfig.CARD_CSS).toExternalForm());
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.initOwner(navigationService.getStage());
+            dialogStage.setTitle(title);
+            dialogStage.setScene(scene);
+            dialogStage.showAndWait();
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to open column dialog", e);
+            return false;
+        }
+    }
+
+    private boolean showCardDialog(String title,
+            java.util.function.Function<Stage, CardDialogController> controllerFactory) {
         try {
             FXMLLoader loader = new FXMLLoader(resolveResource(AppConfig.CARD_DIALOG_FXML));
             Stage dialogStage = new Stage();
-            CardDialogController controller = new CardDialogController(
-                    cardService, board.getId(), existing, defaultStatus, this::refreshBoard, dialogStage,
-                    markdownService, hostServices, attachmentService);
+            CardDialogController controller = controllerFactory.apply(dialogStage);
             loader.setController(controller);
             Parent root = loader.load();
             Scene scene = new Scene(root, AppConfig.CARD_DIALOG_WIDTH, AppConfig.CARD_DIALOG_HEIGHT);
             scene.getStylesheets().add(resolveResource(AppConfig.APP_CSS).toExternalForm());
+            scene.getStylesheets().add(resolveResource(AppConfig.BOARD_CSS).toExternalForm());
             scene.getStylesheets().add(resolveResource(AppConfig.CARD_CSS).toExternalForm());
-            dialogStage.setTitle(existing == null ? "New Card" : "Edit Card");
-            dialogStage.setScene(scene);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.initOwner(navigationService.getStage());
+            dialogStage.setTitle(title);
+            dialogStage.setScene(scene);
             dialogStage.showAndWait();
+            return true;
         } catch (Exception e) {
             logger.error("Failed to open card dialog", e);
-            showFailure("Unable to open the card dialog. Please try again.");
+            return false;
         }
     }
 
-    private void showFailure(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Boardly");
-        alert.setHeaderText(message);
-        alert.showAndWait();
-    }
-
-    private URL resolveResource(String resourcePath) {
-        URL url = getClass().getResource(resourcePath);
+    private java.net.URL resolveResource(String resourcePath) {
+        java.net.URL url = getClass().getResource(resourcePath);
         if (url == null) {
             throw new IllegalStateException("Required resource not found on classpath: " + resourcePath);
         }
         return url;
     }
 
-    private CardStatus statusOfNewCardButton(Button button) {
-        if (button == plannedNewCardButton) {
-            return CardStatus.PLANNED;
-        }
-        if (button == inProgressNewCardButton) {
-            return CardStatus.IN_PROGRESS;
-        }
-        if (button == completedNewCardButton) {
-            return CardStatus.COMPLETED;
-        }
-        if (button == closedNewCardButton) {
-            return CardStatus.CLOSED;
-        }
-        return null;
-    }
-
-    private void layoutColumns() {
-        for (VBox column : List.of(plannedColumn, inProgressColumn, completedColumn, closedColumn)) {
-            column.setMinWidth(240);
-            column.setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(column, Priority.ALWAYS);
-            VBox.setVgrow(column, Priority.ALWAYS);
-        }
-    }
-
-    private Map<CardStatus, List<Card>> groupCardsByStatus() {
-        Map<CardStatus, List<Card>> byStatus = new EnumMap<>(CardStatus.class);
-        List<Card> cards = board.getCards();
-        if (cards != null) {
-            for (Card card : cards) {
-                byStatus.computeIfAbsent(card.getStatus(), status -> new ArrayList<>()).add(card);
-            }
-        }
-        return byStatus;
-    }
-
-    private List<CardView> cardViews(List<Card> cards) {
-        List<CardView> views = new ArrayList<>();
-        if (cards != null) {
-            for (Card card : cards) {
-                CardView cardView = new CardView(card, dueDateService, markdownService,
-                        this::openCardEditor, this::toggleCardTask, hostServices,
-                        attachmentService::resolveById, attachmentService.countForCard(card.getId()));
-                configureDragSource(cardView);
-                views.add(cardView);
-            }
-        }
-        return views;
-    }
-
-    private void configureDragSource(CardView cardView) {
-        cardView.addEventFilter(MouseEvent.DRAG_DETECTED, event -> {
-            Dragboard dragboard = cardView.startDragAndDrop(TransferMode.MOVE);
-            ClipboardContent content = new ClipboardContent();
-            content.putString(Long.toString(cardView.getCard().getId()));
-            dragboard.setContent(content);
-            WritableImage dragImage = cardView.snapshot(new SnapshotParameters(), null);
-            dragboard.setDragView(dragImage, event.getX(), event.getY());
-            cardView.setOpacity(0.45);
-            cardView.setOnDragDone(doneEvent -> cardView.setOpacity(1.0));
-            event.consume();
-        });
-    }
-
-    private void configureDropTarget(VBox targetCards, VBox targetColumn, CardStatus targetStatus) {
-        EventHandler<DragEvent> dragOverHandler = event -> {
-            if (isCardDrag(event)) {
-                event.acceptTransferModes(TransferMode.MOVE);
-            }
-            event.consume();
-        };
-        targetCards.setOnDragOver(dragOverHandler);
-        targetColumn.setOnDragOver(dragOverHandler);
-        targetCards.setOnDragDropped(event -> handleCardDrop(event, targetCards, targetStatus));
-        targetColumn.setOnDragDropped(event -> handleCardDrop(event, targetCards, targetStatus));
-        targetColumn.setOnDragEntered(event -> {
-            if (isCardDrag(event)) {
-                targetColumn.getStyleClass().add("board-column-drag-target");
-            }
-        });
-        targetColumn.setOnDragExited(event -> targetColumn.getStyleClass().remove("board-column-drag-target"));
-    }
-
-    private void handleCardDrop(DragEvent event, VBox targetCards, CardStatus targetStatus) {
-        boolean completed = false;
-        try {
-            if (!isCardDrag(event)) {
-                return;
-            }
-            long cardId = Long.parseLong(event.getDragboard().getString());
-            cardService.moveCard(cardId, targetStatus, dropIndex(targetCards, event.getY()));
-            refreshBoard();
-            completed = true;
-        } catch (AppException | NumberFormatException e) {
-            logger.error("Failed to move card by drag and drop", e);
-            showFailure("Unable to move the card. Please try again.");
-        } finally {
-            targetCards.getParent().getStyleClass().remove("board-column-drag-target");
-            event.setDropCompleted(completed);
-            event.consume();
-        }
-    }
-
-    private boolean isCardDrag(DragEvent event) {
-        Dragboard dragboard = event.getDragboard();
-        return dragboard.hasString() && event.getGestureSource() instanceof CardView;
-    }
-
-    private int dropIndex(VBox targetCards, double y) {
-        for (int index = 0; index < targetCards.getChildren().size(); index++) {
-            if (targetCards.getChildren().get(index) instanceof CardView cardView
-                    && y < cardView.getLayoutY() + cardView.getBoundsInParent().getHeight() / 2) {
-                return index;
-            }
-        }
-        return targetCards.getChildren().size();
+    private void showErrorMessage(AppException e) {
+        footerLabel.setText(e.getMessage());
     }
 }

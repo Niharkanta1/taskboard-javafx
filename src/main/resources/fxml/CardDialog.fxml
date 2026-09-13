@@ -24,8 +24,8 @@
             <Label styleClass="form-label" text="Title" />
             <TextField fx:id="titleField" promptText="Card title" />
             <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label styleClass="form-label" text="Status" />
-                <ChoiceBox fx:id="statusChoice" prefWidth="150" />
+                <Label styleClass="form-label" text="Column" />
+                <ChoiceBox fx:id="columnChoice" prefWidth="180" />
                 <Label styleClass="form-label" text="Due date" />
                 <DatePicker fx:id="dueDatePicker" />
             </HBox>

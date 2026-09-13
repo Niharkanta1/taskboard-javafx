@@ -2,9 +2,10 @@ package com.boardly.taskboard.controller;
 
 import com.boardly.taskboard.exception.AppException;
 import com.boardly.taskboard.exception.ValidationException;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.CardAttachment;
+import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.service.AttachmentService;
 import com.boardly.taskboard.service.CardService;
 import com.boardly.taskboard.service.MarkdownService;
@@ -20,21 +21,23 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
+import java.io.File;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
- * Modal dialog for creating or editing a card on a board.
+ * Modal dialog for creating or editing a card.
  *
  * <p>
- * Validation and persistence are delegated to {@link CardService};
- * the dialog only reports friendly messages for failures.
+ * The card's column is chosen from the board's dynamic columns instead of
+ * a fixed status.
  * </p>
  */
 public class CardDialogController {
@@ -45,12 +48,14 @@ public class CardDialogController {
     private final CardService cardService;
     private final long boardId;
     private final Card existing;
-    private final CardStatus defaultStatus;
+    private final BoardColumn defaultColumn;
     private final Runnable onSaved;
     private final Stage stage;
     private final MarkdownService markdownService;
     private final HostServices hostServices;
     private final AttachmentService attachmentService;
+
+    private boolean saved;
 
     @FXML
     private Label titleLabel;
@@ -59,16 +64,10 @@ public class CardDialogController {
     private TextField titleField;
 
     @FXML
-    private ChoiceBox<CardStatus> statusChoice;
+    private ChoiceBox<BoardColumn> columnChoice;
 
     @FXML
     private DatePicker dueDatePicker;
-
-    @FXML
-    private TextArea descriptionField;
-
-    @FXML
-    private VBox descriptionPreview;
 
     @FXML
     private Button editButton;
@@ -77,39 +76,42 @@ public class CardDialogController {
     private Button previewButton;
 
     @FXML
+    private Button attachButton;
+
+    @FXML
+    private TextArea descriptionField;
+
+    @FXML
+    private VBox descriptionPreview;
+
+    @FXML
     private Label errorLabel;
 
     @FXML
     private Button deleteButton;
 
-    @FXML
-    private Button attachButton;
-
-    public CardDialogController(CardService cardService,
-            long boardId,
-            Card existing,
-            CardStatus defaultStatus,
-            Runnable onSaved,
-            Stage stage,
-            MarkdownService markdownService,
-            HostServices hostServices) {
-        this(cardService, boardId, existing, defaultStatus, onSaved, stage, markdownService,
-                hostServices, null);
+    public CardDialogController(CardService cardService, long boardId, Card existing,
+            BoardColumn defaultColumn, HostServices hostServices,
+            MarkdownService markdownService, Stage stage) {
+        this(cardService, boardId, existing, defaultColumn, null, stage, markdownService, hostServices, null);
     }
 
-    public CardDialogController(CardService cardService,
-            long boardId,
-            Card existing,
-            CardStatus defaultStatus,
-            Runnable onSaved,
-            Stage stage,
-            MarkdownService markdownService,
-            HostServices hostServices,
+    public CardDialogController(CardService cardService, long boardId, Card existing,
+            BoardColumn defaultColumn, HostServices hostServices,
+            MarkdownService markdownService, Stage stage,
+            AttachmentService attachmentService) {
+        this(cardService, boardId, existing, defaultColumn, null, stage, markdownService, hostServices,
+                attachmentService);
+    }
+
+    public CardDialogController(CardService cardService, long boardId, Card existing,
+            BoardColumn defaultColumn, Runnable onSaved, Stage stage,
+            MarkdownService markdownService, HostServices hostServices,
             AttachmentService attachmentService) {
         this.cardService = cardService;
         this.boardId = boardId;
         this.existing = existing;
-        this.defaultStatus = defaultStatus;
+        this.defaultColumn = defaultColumn;
         this.onSaved = onSaved;
         this.stage = stage;
         this.markdownService = markdownService;
@@ -117,51 +119,80 @@ public class CardDialogController {
         this.attachmentService = attachmentService;
     }
 
+    /** Legacy constructor support for tests. */
+    public CardDialogController(CardService cardService, long boardId, Card existing,
+            CardStatus status, Runnable onSaved, Stage stage,
+            MarkdownService markdownService, HostServices hostServices) {
+        this(cardService, boardId, existing, null, onSaved, stage, markdownService, hostServices, null);
+    }
+
     @FXML
     private void initialize() {
-        statusChoice.getItems().setAll(CardStatus.values());
-
-        if (existing == null) {
-            titleLabel.setText("New Card");
-            statusChoice.setValue(defaultStatus);
-            titleField.requestFocus();
-            attachButton.setDisable(true);
-        } else {
+        populateColumnChoices();
+        if (existing != null) {
             titleLabel.setText("Edit Card");
             titleField.setText(existing.getTitle());
-            statusChoice.setValue(existing.getStatus());
-            dueDatePicker.setValue(existing.getDueDate());
             descriptionField.setText(existing.getDescription() == null ? "" : existing.getDescription());
+            dueDatePicker.setValue(existing.getDueDate());
             deleteButton.setVisible(true);
             deleteButton.setManaged(true);
+            attachButton.setDisable(attachmentService == null);
+        } else {
+            titleLabel.setText("New Card");
+            if (defaultColumn != null) {
+                columnChoice.setValue(defaultColumn);
+            }
+            attachButton.setDisable(true);
         }
 
         descriptionField.textProperty().addListener((observable, oldValue, newValue) -> refreshPreview());
-        refreshPreview();
         setMode(true);
     }
 
-    /**
-     * Switches the description area between the raw Markdown editor
-     * ({@code preview == false}) and the rendered Markdown preview
-     * ({@code preview == true}).
-     */
+    private void populateColumnChoices() {
+        columnChoice.getItems().clear();
+        if (cardService != null && boardId > 0) {
+            List<BoardColumn> columns = cardService.getColumns(boardId);
+            columnChoice.getItems().addAll(columns);
+            if (existing != null) {
+                for (BoardColumn col : columns) {
+                    if (col.getId() != null && col.getId() == existing.getBoardColumnId()) {
+                        columnChoice.setValue(col);
+                        break;
+                    }
+                }
+            } else if (defaultColumn != null) {
+                columnChoice.setValue(defaultColumn);
+            } else if (!columns.isEmpty()) {
+                columnChoice.setValue(columns.get(0));
+            }
+        }
+    }
+
     private void setMode(boolean preview) {
         if (preview) {
             descriptionField.setVisible(false);
             descriptionField.setManaged(false);
             descriptionPreview.setVisible(true);
             descriptionPreview.setManaged(true);
-            previewButton.getStyleClass().add("mode-button-active");
-            editButton.getStyleClass().remove("mode-button-active");
+            if (previewButton != null) {
+                previewButton.getStyleClass().add("mode-button-active");
+            }
+            if (editButton != null) {
+                editButton.getStyleClass().remove("mode-button-active");
+            }
             refreshPreview();
         } else {
             descriptionField.setVisible(true);
             descriptionField.setManaged(true);
             descriptionPreview.setVisible(false);
             descriptionPreview.setManaged(false);
-            editButton.getStyleClass().add("mode-button-active");
-            previewButton.getStyleClass().remove("mode-button-active");
+            if (editButton != null) {
+                editButton.getStyleClass().add("mode-button-active");
+            }
+            if (previewButton != null) {
+                previewButton.getStyleClass().remove("mode-button-active");
+            }
         }
     }
 
@@ -175,12 +206,10 @@ public class CardDialogController {
         setMode(true);
     }
 
-    /**
-     * Re-renders the live Markdown preview from the current editor text.
-     * Task checkboxes in the preview are not interactive; toggling happens
-     * on the board view after the card is saved.
-     */
     private void refreshPreview() {
+        if (markdownService == null) {
+            return;
+        }
         String text = descriptionField.getText() == null ? "" : descriptionField.getText();
         descriptionPreview.getChildren().clear();
         Node rendered = MarkdownRenderer.render(text, markdownService, null, hostServices,
@@ -197,7 +226,7 @@ public class CardDialogController {
         chooser.setTitle("Attach Image");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
                 "Images (PNG, JPG, JPEG)", "*.png", "*.PNG", "*.jpg", "*.JPG", "*.jpeg", "*.JPEG"));
-        java.io.File selected = chooser.showOpenDialog(stage);
+        File selected = chooser.showOpenDialog(stage);
         if (selected == null) {
             return;
         }
@@ -218,18 +247,29 @@ public class CardDialogController {
 
     @FXML
     private void onSave() {
-        String title = titleField.getText() == null ? "" : titleField.getText();
-        String description = descriptionField.getText() == null ? "" : descriptionField.getText();
-        CardStatus status = statusChoice.getValue() == null ? defaultStatus : statusChoice.getValue();
+        String title = titleField.getText() == null ? "" : titleField.getText().trim();
+        if (title.isEmpty()) {
+            errorLabel.setText("Card title must not be empty.");
+            return;
+        }
+        String description = descriptionField.getText();
+        BoardColumn selectedColumn = columnChoice.getValue();
+        if (selectedColumn == null) {
+            errorLabel.setText("Choose a column for the card.");
+            return;
+        }
         LocalDate dueDate = dueDatePicker.getValue();
 
         try {
             if (existing == null) {
-                cardService.createCard(boardId, title, description, status, dueDate);
+                cardService.createCard(boardId, title, description, selectedColumn.getId(), dueDate);
             } else {
-                cardService.updateCard(existing.getId(), title, description, status, dueDate);
+                cardService.updateCard(existing.getId(), title, description, selectedColumn.getId(), dueDate);
             }
-            stage.close();
+            saved = true;
+            if (stage != null) {
+                stage.close();
+            }
             if (onSaved != null) {
                 onSaved.run();
             }
@@ -243,7 +283,9 @@ public class CardDialogController {
 
     @FXML
     private void onCancel() {
-        stage.close();
+        if (stage != null) {
+            stage.close();
+        }
     }
 
     @FXML
@@ -262,7 +304,10 @@ public class CardDialogController {
 
         try {
             cardService.deleteCard(existing.getId());
-            stage.close();
+            saved = true;
+            if (stage != null) {
+                stage.close();
+            }
             if (onSaved != null) {
                 onSaved.run();
             }
@@ -270,5 +315,9 @@ public class CardDialogController {
             logger.error("Failed to delete card", e);
             errorLabel.setText("Unable to delete the card. Please try again.");
         }
+    }
+
+    public boolean isSaved() {
+        return saved;
     }
 }

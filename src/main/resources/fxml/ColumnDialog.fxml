@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml/1">
+
+    <top>
+        <Label fx:id="titleLabel" styleClass="dialog-title" text="New Column" />
+    </top>
+
+    <center>
+        <VBox styleClass="workspace-dialog" spacing="10">
+            <Label styleClass="form-label" text="Name" />
+            <TextField fx:id="nameField" promptText="Column name" />
+            <CheckBox fx:id="finalColumnCheck" text="Final column (cards are considered done)" />
+            <Label fx:id="targetLabel" styleClass="form-label" text="Move cards to"
+                  visible="false" managed="false" />
+            <ChoiceBox fx:id="targetChoice" prefWidth="220" visible="false" managed="false" />
+            <Label fx:id="errorLabel" styleClass="dialog-error" text="" wrapText="true" />
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox styleClass="dialog-actions" spacing="8" alignment="CENTER_RIGHT">
+            <Button fx:id="cancelButton" styleClass="dialog-cancel" text="Cancel"
+                   onAction="#onCancel" />
+            <Button fx:id="saveButton" styleClass="dialog-save" text="Save"
+                   onAction="#onSave" defaultButton="true" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

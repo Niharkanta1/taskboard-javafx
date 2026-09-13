@@ -1,193 +1,228 @@
 package com.boardly.taskboard.service;
 
-import com.boardly.taskboard.exception.AppException;
-import com.boardly.taskboard.exception.DatabaseException;
 import com.boardly.taskboard.exception.ValidationException;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
+import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
-import com.boardly.taskboard.repository.CardRepository.CardPlacement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.EnumMap;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 
 /**
- * Card business rules: create, update and delete cards on a board.
+ * Business rules for cards: validation, persistence, and moves.
  *
  * <p>
- * Timestamp rules:
- * <ul>
- * <li>entering {@code COMPLETED} sets {@code completed_at} to now;</li>
- * <li>leaving {@code COMPLETED} (to any other status, including {@code CLOSED})
- * clears {@code completed_at}.</li>
- * </ul>
- *
- * <p>
- * New cards are appended after the last card of the board
- * ({@code max(position) + 1}).
+ * Cards belong to a board column; moving a card changes its column and
+ * position. Entering a final column stamps {@code completedAt}; leaving
+ * a final column clears it.
  * </p>
  */
 public class CardService {
 
     private static final Logger logger = LoggerFactory.getLogger(CardService.class);
 
-    public static final int TITLE_MAX_LENGTH = 200;
+    public static final int TITLE_MAX_LENGTH = 100;
     public static final int DESCRIPTION_MAX_LENGTH = 5000;
+
+    private static final double MIN_POSITION = 1.0;
+    private static final double POSITION_STEP = 1.0;
 
     private final CardRepository cardRepository;
     private final BoardRepository boardRepository;
+    private final BoardColumnRepository columnRepository;
 
-    public CardService(CardRepository cardRepository, BoardRepository boardRepository) {
+    public CardService(CardRepository cardRepository, BoardRepository boardRepository,
+            BoardColumnRepository columnRepository) {
         this.cardRepository = cardRepository;
         this.boardRepository = boardRepository;
+        this.columnRepository = columnRepository;
+    }
+
+    public CardService(CardRepository cardRepository, BoardColumnRepository columnRepository) {
+        this(cardRepository, null, columnRepository);
     }
 
     public Card createCard(long boardId, String title, String description,
-            CardStatus status, LocalDate dueDate) {
-        boardRepository.findById(boardId)
-                .orElseThrow(() -> new ValidationException("Board not found."));
-
-        Instant now = Instant.now();
-        Card card = new Card(boardId, normalizeTitle(title), normalizeDescription(description),
-                status, nextPosition(boardId), dueDate);
-        card.setCreatedAt(now);
-        card.setUpdatedAt(now);
-        if (status == CardStatus.COMPLETED) {
-            card.setCompletedAt(now);
+            long boardColumnId, LocalDate dueDate) {
+        if (boardId <= 0) {
+            throw new ValidationException("Board id is required");
         }
-        return insertSafely(card);
+        if (boardRepository != null && boardRepository.findById(boardId).isEmpty()) {
+            throw new ValidationException("Board not found.");
+        }
+        BoardColumn col = requireColumn(boardColumnId);
+        String trimmedTitle = requireTitle(title);
+        String trimmedDesc = normalizeDescription(description);
+
+        double position = nextPosition(boardColumnId);
+        Instant now = Instant.now();
+        Instant completedAt = col.isFinal() ? now : null;
+        Card card = new Card(null, boardId, boardColumnId, trimmedTitle, trimmedDesc,
+                position, dueDate, now, now, completedAt);
+        Card saved = cardRepository.insert(card);
+        logger.info("Created card '{}' (id={}) in column {}", saved.getTitle(), saved.getId(), boardColumnId);
+        return saved;
     }
 
     public Card updateCard(long id, String title, String description,
-            CardStatus status, LocalDate dueDate) {
-        Card card = cardRepository.findById(id)
-                .orElseThrow(() -> new ValidationException("Card not found."));
+            long boardColumnId, LocalDate dueDate) {
+        Card existing = requireCard(id);
+        BoardColumn col = requireColumn(boardColumnId);
+        String trimmedTitle = requireTitle(title);
+        String trimmedDesc = normalizeDescription(description);
+
+        boolean enteringFinal = col.isFinal()
+                && (existing.getBoardColumnId() != boardColumnId || existing.getCompletedAt() == null);
+        boolean leavingFinal = !col.isFinal();
+        Instant completedAt;
+        if (enteringFinal) {
+            completedAt = Instant.now();
+        } else if (leavingFinal) {
+            completedAt = null;
+        } else {
+            completedAt = existing.getCompletedAt();
+        }
 
         Instant now = Instant.now();
-        card.setTitle(normalizeTitle(title));
-        card.setDescription(normalizeDescription(description));
-        card.setStatus(status);
-        card.setDueDate(dueDate);
-        card.setUpdatedAt(now);
-
-        if (status == CardStatus.COMPLETED && card.getCompletedAt() == null) {
-            card.setCompletedAt(now);
-        } else if (status != CardStatus.COMPLETED) {
-            card.setCompletedAt(null);
-        }
-        return updateSafely(card);
+        Card updated = new Card(existing.getId(), existing.getBoardId(), boardColumnId,
+                trimmedTitle, trimmedDesc, existing.getPosition(), dueDate,
+                existing.getCreatedAt(), now, completedAt);
+        Card saved = cardRepository.update(updated);
+        logger.info("Updated card '{}' (id={})", saved.getTitle(), saved.getId());
+        return saved;
     }
 
     /**
-     * @return {@code true} if the card was deleted, {@code false} if it did not
-     *         exist.
+     * Moves a card to the given column at the given position (1-based index
+     * within the target column).
      */
+    public Card moveCard(long cardId, long boardColumnId, int index) {
+        Card existing = requireCard(cardId);
+        requireColumn(boardColumnId);
+        if (index < 1) {
+            throw new ValidationException("Position must be at least 1");
+        }
+
+        long boardId = existing.getBoardId();
+        List<Card> boardCards = cardRepository.findByBoard(boardId);
+
+        List<Card> targetCards = new ArrayList<>(boardCards.stream()
+                .filter(c -> c.getBoardColumnId() == boardColumnId && c.getId() != cardId)
+                .toList());
+
+        int insertionIndex = Math.max(0, Math.min(index - 1, targetCards.size()));
+        targetCards.add(insertionIndex, existing);
+
+        Instant now = Instant.now();
+        boolean isTargetFinal = isFinalColumn(boardColumnId);
+        boolean wasFinal = existing.getCompletedAt() != null;
+        Instant completedAt = isTargetFinal ? (wasFinal ? existing.getCompletedAt() : now) : null;
+
+        List<CardRepository.CardPlacement> placements = new ArrayList<>();
+        for (int i = 0; i < targetCards.size(); i++) {
+            Card c = targetCards.get(i);
+            Instant comp = (c.getId() == cardId) ? completedAt : c.getCompletedAt();
+            placements.add(new CardRepository.CardPlacement(c.getId(), boardColumnId, i + 1.0, now, comp));
+        }
+
+        if (existing.getBoardColumnId() != boardColumnId) {
+            List<Card> sourceCards = boardCards.stream()
+                    .filter(c -> c.getBoardColumnId() == existing.getBoardColumnId() && c.getId() != cardId)
+                    .toList();
+            for (int i = 0; i < sourceCards.size(); i++) {
+                Card c = sourceCards.get(i);
+                placements.add(new CardRepository.CardPlacement(c.getId(), c.getBoardColumnId(), i + 1.0, now,
+                        c.getCompletedAt()));
+            }
+        }
+
+        cardRepository.reorder(boardId, placements);
+        logger.info("Moved card (id={}) to column {} at index {}", cardId, boardColumnId, index);
+        return requireCard(cardId);
+    }
+
     public boolean deleteCard(long id) {
-        boolean deleted = cardRepository.delete(id) == 1;
+        boolean deleted = cardRepository.delete(id);
         if (deleted) {
             logger.info("Deleted card (id={})", id);
         }
         return deleted;
     }
 
-    /** Moves a card to a zero-based index in its target status column. */
-    public Card moveCard(long cardId, CardStatus targetStatus, int targetIndex) {
-        if (targetStatus == null) {
-            throw new ValidationException("Card status is required.");
+    /**
+     * Returns the board's columns in display order.
+     */
+    public List<BoardColumn> getColumns(long boardId) {
+        if (boardId <= 0) {
+            throw new ValidationException("Board id is required");
         }
-        Card moving = cardRepository.findById(cardId)
-                .orElseThrow(() -> new ValidationException("Card not found."));
-        List<Card> boardCards = cardRepository.findByBoard(moving.getBoardId());
-        Map<CardStatus, List<Card>> columns = new EnumMap<>(CardStatus.class);
-        for (CardStatus status : CardStatus.values()) {
-            columns.put(status, new ArrayList<>());
-        }
-        for (Card card : boardCards) {
-            if (card.getId() != cardId) {
-                columns.get(card.getStatus()).add(card);
-            }
-        }
+        return columnRepository.findByBoard(boardId);
+    }
 
-        List<Card> targetColumn = columns.get(targetStatus);
-        int insertionIndex = Math.max(0, Math.min(targetIndex, targetColumn.size()));
-        targetColumn.add(insertionIndex, moving);
+    /**
+     * Moves all cards of the given column to the target column, appending
+     * them in their current order.
+     *
+     * @return the number of cards that were moved
+     */
+    public int moveCardsToColumn(long sourceColumnId, long targetColumnId) {
+        if (sourceColumnId == targetColumnId) {
+            throw new ValidationException("Source and target columns must differ");
+        }
+        BoardColumn sourceCol = requireColumn(sourceColumnId);
+        BoardColumn targetCol = requireColumn(targetColumnId);
+        long boardId = sourceCol.getBoardId();
+
+        List<Card> boardCards = cardRepository.findByBoard(boardId);
+        List<Card> sourceCards = boardCards.stream()
+                .filter(card -> card.getBoardColumnId() == sourceColumnId)
+                .toList();
+        if (sourceCards.isEmpty()) {
+            return 0;
+        }
+        List<Card> targetCards = new ArrayList<>(boardCards.stream()
+                .filter(card -> card.getBoardColumnId() == targetColumnId)
+                .toList());
 
         Instant now = Instant.now();
-        Instant completedAt = moving.getCompletedAt();
-        if (targetStatus == CardStatus.COMPLETED && completedAt == null) {
-            completedAt = now;
-        } else if (targetStatus != CardStatus.COMPLETED) {
-            completedAt = null;
-        }
-        moving.setStatus(targetStatus);
-        moving.setCompletedAt(completedAt);
-        moving.setUpdatedAt(now);
+        boolean isTargetFinal = targetCol.isFinal();
 
-        List<CardPlacement> placements = new ArrayList<>();
-        for (CardStatus status : CardStatus.values()) {
-            List<Card> column = columns.get(status);
-            for (int index = 0; index < column.size(); index++) {
-                Card card = column.get(index);
-                Instant cardCompletedAt = card.getCompletedAt();
-                if (card.getId() == cardId) {
-                    cardCompletedAt = completedAt;
-                    card.setPosition(index + 1.0);
-                    card.setStatus(targetStatus);
-                    card.setCompletedAt(completedAt);
-                    card.setUpdatedAt(now);
-                }
-                placements.add(new CardPlacement(card.getId(), status, index + 1.0, now, cardCompletedAt));
-            }
+        List<CardRepository.CardPlacement> placements = new ArrayList<>();
+        double startPos = targetCards.size() + 1.0;
+        for (int i = 0; i < sourceCards.size(); i++) {
+            Card c = sourceCards.get(i);
+            Instant comp = isTargetFinal ? (c.getCompletedAt() != null ? c.getCompletedAt() : now) : null;
+            placements.add(new CardRepository.CardPlacement(c.getId(), targetColumnId, startPos + i, now, comp));
         }
-        try {
-            cardRepository.reorder(moving.getBoardId(), placements);
-            moving.setPosition(insertionIndex + 1.0);
-            logger.info("Moved card (id={}) to status {} at position {}",
-                    cardId, targetStatus, moving.getPosition());
-            return moving;
-        } catch (DatabaseException e) {
-            throw new AppException("Failed to move card", e);
-        }
+        cardRepository.reorder(boardId, placements);
+        return sourceCards.size();
     }
 
-    private Card insertSafely(Card card) {
-        try {
-            return cardRepository.insert(card);
-        } catch (DatabaseException e) {
-            throw new AppException("Failed to create card", e);
-        }
+    public Card requireCard(long cardId) {
+        return cardRepository.findById(cardId)
+                .orElseThrow(() -> new ValidationException("Card not found: " + cardId));
     }
 
-    private Card updateSafely(Card card) {
-        try {
-            return cardRepository.update(card);
-        } catch (DatabaseException e) {
-            throw new AppException("Failed to update card", e);
+    private BoardColumn requireColumn(long boardColumnId) {
+        if (boardColumnId <= 0) {
+            throw new ValidationException("Column is required");
         }
+        return columnRepository.findById(boardColumnId)
+                .orElseThrow(() -> new ValidationException("Column not found: " + boardColumnId));
     }
 
-    private double nextPosition(long boardId) {
-        List<Card> cards = cardRepository.findByBoard(boardId);
-        double max = 0.0;
-        for (Card card : cards) {
-            max = Math.max(max, card.getPosition());
-        }
-        return max + 1.0;
-    }
-
-    private String normalizeTitle(String title) {
-        String trimmed = title == null ? "" : title.trim();
-        if (trimmed.isEmpty()) {
+    private String requireTitle(String title) {
+        if (title == null || title.isBlank()) {
             throw new ValidationException("Card title is required.");
         }
+        String trimmed = title.trim();
         if (trimmed.length() > TITLE_MAX_LENGTH) {
             throw new ValidationException(
                     "Card title must be at most " + TITLE_MAX_LENGTH + " characters.");
@@ -196,7 +231,10 @@ public class CardService {
     }
 
     private String normalizeDescription(String description) {
-        String trimmed = description == null ? "" : description.trim();
+        if (description == null) {
+            return null;
+        }
+        String trimmed = description.trim();
         if (trimmed.isEmpty()) {
             return null;
         }
@@ -205,5 +243,20 @@ public class CardService {
                     "Card description must be at most " + DESCRIPTION_MAX_LENGTH + " characters.");
         }
         return trimmed;
+    }
+
+    private boolean isFinalColumn(long boardColumnId) {
+        return requireColumn(boardColumnId).isFinal();
+    }
+
+    private double nextPosition(long boardColumnId) {
+        return countInColumn(boardColumnId) * POSITION_STEP + MIN_POSITION;
+    }
+
+    private long countInColumn(long boardColumnId) {
+        long boardId = requireColumn(boardColumnId).getBoardId();
+        return cardRepository.findByBoard(boardId).stream()
+                .filter(card -> card.getBoardColumnId() == boardColumnId)
+                .count();
     }
 }

@@ -49,6 +49,15 @@ public class CardView extends VBox {
     private final BiConsumer<Card, Integer> onTaskToggle;
     private final HostServices hostServices;
 
+    /**
+     * Simple constructor used by the board view: no task toggling, no
+     * attachment resolution.
+     */
+    public CardView(Card card, MarkdownService markdownService, DueDateService dueDateService,
+            Consumer<Card> onOpenCard) {
+        this(card, dueDateService, markdownService, onOpenCard, null, null, null, 0);
+    }
+
     public CardView(Card card, DueDateService dueDateService, MarkdownService markdownService,
             Consumer<Card> onOpenCard, BiConsumer<Card, Integer> onTaskToggle,
             HostServices hostServices) {
@@ -103,7 +112,7 @@ public class CardView extends VBox {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         getChildren().add(spacer);
 
-        DueDateStatus dueStatus = dueDateService.status(card.getDueDate(), card.getStatus());
+        DueDateStatus dueStatus = dueDateService.status(card.getDueDate(), card.isInFinalColumn());
         if (dueStatus != DueDateStatus.NONE || attachmentCount > 0) {
             HBox metadata = new HBox(8);
             metadata.setMaxWidth(Double.MAX_VALUE);
@@ -134,6 +143,15 @@ public class CardView extends VBox {
             if (onOpenCard != null) {
                 onOpenCard.accept(card);
             }
+        });
+
+        // Cards are drag sources; the column views handle the drop.
+        setOnDragDetected(event -> {
+            javafx.scene.input.Dragboard db = startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString("card:" + card.getId());
+            db.setContent(content);
+            event.consume();
         });
     }
 

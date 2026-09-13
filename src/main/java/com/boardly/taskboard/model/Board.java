@@ -1,10 +1,16 @@
 package com.boardly.taskboard.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A kanban board belonging to exactly one workspace.
+ * A board inside a workspace.
+ *
+ * <p>
+ * {@code columns} and {@code cards} are transient and populated by
+ * {@link com.boardly.taskboard.service.BoardService} when a board is loaded.
+ * </p>
  */
 public class Board {
 
@@ -14,7 +20,8 @@ public class Board {
     private String description;
     private Instant createdAt;
     private Instant updatedAt;
-    private List<Card> cards;
+    private List<BoardColumn> columns = new ArrayList<>();
+    private List<Card> cards = new ArrayList<>();
 
     public Board() {
     }
@@ -26,6 +33,18 @@ public class Board {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public Board(Long id, long workspaceId, String name, String description,
+            Instant createdAt, Instant updatedAt, List<BoardColumn> columns, List<Card> cards) {
+        this.id = id == null ? 0 : id;
+        this.workspaceId = workspaceId;
+        this.name = name;
+        this.description = description;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.columns = columns != null ? columns : new ArrayList<>();
+        this.cards = cards != null ? cards : new ArrayList<>();
     }
 
     public long getId() {
@@ -76,11 +95,14 @@ public class Board {
         this.updatedAt = updatedAt;
     }
 
-    /**
-     * Transient view data: the board's cards, populated by
-     * {@code BoardService.loadBoard}. Never persisted; repositories
-     * neither read nor write this field.
-     */
+    public List<BoardColumn> getColumns() {
+        return columns;
+    }
+
+    public void setColumns(List<BoardColumn> columns) {
+        this.columns = columns;
+    }
+
     public List<Card> getCards() {
         return cards;
     }

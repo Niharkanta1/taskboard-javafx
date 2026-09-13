@@ -2,12 +2,14 @@ package com.boardly.taskboard.database;
 
 import com.boardly.taskboard.exception.DatabaseException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.Workspace;
+import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
 import com.boardly.taskboard.repository.WorkspaceRepository;
+import com.boardly.taskboard.repository.impl.BoardColumnRepositoryImpl;
 import com.boardly.taskboard.repository.impl.BoardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.WorkspaceRepositoryImpl;
@@ -40,8 +42,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Integration tests covering database initialization, migrations,
  * foreign-key enforcement, transactions and cascade deletes.
  *
- * <p>Uses a temporary database file so the real application database is
- * never touched.</p>
+ * <p>
+ * Uses a temporary database file so the real application database is
+ * never touched.
+ * </p>
  */
 class DatabaseIntegrationTest {
 
@@ -71,15 +75,17 @@ class DatabaseIntegrationTest {
 
     @Test
     void allTablesExist() throws Exception {
-        // db.getConnection() returns the shared application connection; it must NOT be closed here.
+        // db.getConnection() returns the shared application connection; it must NOT be
+        // closed here.
         Connection conn = db.getConnection();
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type = 'table'")) {
+                ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type = 'table'")) {
             Set<String> tables = new HashSet<>();
             while (rs.next()) {
                 tables.add(rs.getString(1));
             }
-            for (String expected : new String[]{"users", "workspaces", "boards", "cards", "card_attachments", "flyway_schema_history"}) {
+            for (String expected : new String[] { "users", "workspaces", "boards", "cards", "card_attachments",
+                    "flyway_schema_history" }) {
                 assertTrue(tables.contains(expected), "Missing table: " + expected);
             }
         }
@@ -87,11 +93,12 @@ class DatabaseIntegrationTest {
 
     @Test
     void migrationIsRecordedExactlyOnce() throws Exception {
-        // db.getConnection() returns the shared application connection; it must NOT be closed here.
+        // db.getConnection() returns the shared application connection; it must NOT be
+        // closed here.
         Connection conn = db.getConnection();
         try (PreparedStatement ps = conn.prepareStatement(
-                     "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1'");
-             ResultSet rs = ps.executeQuery()) {
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1'");
+                ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next());
             assertEquals(1, rs.getInt(1));
         }
@@ -103,9 +110,9 @@ class DatabaseIntegrationTest {
         try {
             second.initialize();
             try (Connection conn = second.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(
-                         "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1'");
-                 ResultSet rs = ps.executeQuery()) {
+                    PreparedStatement ps = conn.prepareStatement(
+                            "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1'");
+                    ResultSet rs = ps.executeQuery()) {
                 assertTrue(rs.next());
                 assertEquals(1, rs.getInt(1), "migration must not be applied twice");
             }
@@ -165,13 +172,16 @@ class DatabaseIntegrationTest {
     void deletingWorkspaceCascadesToBoardsAndCards() throws Exception {
         WorkspaceRepository workspaces = new WorkspaceRepositoryImpl(db);
         BoardRepository boards = new BoardRepositoryImpl(db);
+        BoardColumnRepository columns = new BoardColumnRepositoryImpl(db);
         CardRepository cards = new CardRepositoryImpl(db);
 
         Workspace workspace = workspaces.insert(new Workspace("Cascade Test", null));
         Board board = boards.insert(new Board(workspace.getId(), "Board A", null));
-        Card card = cards.insert(new Card(board.getId(), "Card A", null, CardStatus.PLANNED, 1.0, null));
+        BoardColumn column = columns.insert(new BoardColumn(board.getId(), "Planned", 1.0, false));
+        Card card = cards.insert(new Card(board.getId(), column.getId(), "Card A", null, 1.0, null));
 
-        // db.getConnection() returns the shared application connection; it must NOT be closed here.
+        // db.getConnection() returns the shared application connection; it must NOT be
+        // closed here.
         Connection conn = db.getConnection();
         try (PreparedStatement ps = conn.prepareStatement("DELETE FROM workspaces WHERE id = ?")) {
             ps.setLong(1, workspace.getId());
@@ -180,6 +190,7 @@ class DatabaseIntegrationTest {
 
         assertFalse(workspaces.findById(workspace.getId()).isPresent(), "workspace should be deleted");
         assertFalse(boards.findById(board.getId()).isPresent(), "board should be cascade-deleted");
+        assertFalse(columns.findById(column.getId()).isPresent(), "column should be cascade-deleted");
         assertFalse(cards.findById(card.getId()).isPresent(), "card should be cascade-deleted");
     }
 

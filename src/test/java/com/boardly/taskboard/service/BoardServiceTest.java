@@ -2,9 +2,10 @@ package com.boardly.taskboard.service;
 
 import com.boardly.taskboard.exception.ValidationException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.Workspace;
+import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
 import com.boardly.taskboard.repository.WorkspaceRepository;
@@ -33,6 +34,7 @@ class BoardServiceTest {
 
     private FakeBoardRepository boardRepository;
     private FakeCardRepository cardRepository;
+    private FakeBoardColumnRepository columnRepository;
     private FakeWorkspaceRepository workspaceRepository;
     private BoardService service;
 
@@ -40,12 +42,13 @@ class BoardServiceTest {
     void setUp() {
         boardRepository = new FakeBoardRepository();
         cardRepository = new FakeCardRepository();
+        columnRepository = new FakeBoardColumnRepository();
         workspaceRepository = new FakeWorkspaceRepository();
-        service = new BoardService(boardRepository, cardRepository, workspaceRepository);
+        service = new BoardService(boardRepository, cardRepository, columnRepository, workspaceRepository);
     }
 
     @Test
-    void createBoardSucceedsAndAssignsId() {
+    void createBoardSucceedsAndAssignsIdAndSeedsDefaultColumns() {
         Workspace workspace = workspaceRepository.insert(new Workspace("Development", null));
         Board created = service.createBoard(workspace.getId(), "Software Project", "Main project");
         assertNotNull(created.getId());
@@ -53,6 +56,11 @@ class BoardServiceTest {
         assertEquals("Software Project", created.getName());
         assertEquals("Main project", created.getDescription());
         assertEquals(workspace.getId(), created.getWorkspaceId());
+
+        List<BoardColumn> columns = columnRepository.findByBoard(created.getId());
+        assertEquals(4, columns.size());
+        assertEquals(List.of("Planned", "In Progress", "Completed", "Closed"),
+                columns.stream().map(BoardColumn::getName).toList());
     }
 
     @Test
@@ -101,10 +109,11 @@ class BoardServiceTest {
     void loadBoardReturnsBoardWithCards() {
         Workspace workspace = workspaceRepository.insert(new Workspace("Development", null));
         Board board = service.createBoard(workspace.getId(), "Software Project", null);
+        List<BoardColumn> cols = columnRepository.findByBoard(board.getId());
 
-        cardRepository.insert(new Card(board.getId(), "Third", null, CardStatus.CLOSED, 3.0, null));
-        cardRepository.insert(new Card(board.getId(), "First", "details", CardStatus.PLANNED, 1.0, null));
-        cardRepository.insert(new Card(board.getId(), "Second", null, CardStatus.IN_PROGRESS, 2.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(3).getId(), "Third", null, 3.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(0).getId(), "First", "details", 1.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(1).getId(), "Second", null, 2.0, null));
 
         Board loaded = service.loadBoard(board.getId());
         assertEquals("Software Project", loaded.getName());
@@ -183,6 +192,53 @@ class BoardServiceTest {
         }
     }
 
+    /** Simple in-memory stand-in for BoardColumnRepository in unit tests. */
+    private static final class FakeBoardColumnRepository implements BoardColumnRepository {
+
+        private final Map<Long, BoardColumn> byId = new HashMap<>();
+        private long nextId = 1;
+
+        @Override
+        public BoardColumn insert(BoardColumn column) {
+            column.setId(nextId++);
+            byId.put(column.getId(), column);
+            return column;
+        }
+
+        @Override
+        public Optional<BoardColumn> findById(long id) {
+            return Optional.ofNullable(byId.get(id));
+        }
+
+        @Override
+        public List<BoardColumn> findByBoard(long boardId) {
+            List<BoardColumn> result = new ArrayList<>();
+            for (BoardColumn col : byId.values()) {
+                if (col.getBoardId() == boardId) {
+                    result.add(col);
+                }
+            }
+            result.sort(Comparator.comparingDouble(BoardColumn::getPosition).thenComparingLong(BoardColumn::getId));
+            return result;
+        }
+
+        @Override
+        public BoardColumn update(BoardColumn column) {
+            byId.put(column.getId(), column);
+            return column;
+        }
+
+        @Override
+        public boolean delete(long id) {
+            return byId.remove(id) != null;
+        }
+
+        @Override
+        public long countByBoard(long boardId) {
+            return byId.values().stream().filter(c -> c.getBoardId() == boardId).count();
+        }
+    }
+
     /** Simple in-memory stand-in for CardRepository in unit tests. */
     private static final class FakeCardRepository implements CardRepository {
 
@@ -220,13 +276,37 @@ class BoardServiceTest {
         }
 
         @Override
-        public int delete(long id) {
-            return byId.remove(id) != null ? 1 : 0;
+        public boolean delete(long id) {
+            return byId.remove(id) != null;
         }
 
         @Override
         public long count() {
             return byId.size();
+        }
+
+        @Override
+        public void reorder(long boardId, List<CardPlacement> placements) {
+            for (CardPlacement placement : placements) {
+                Card card = byId.get(placement.cardId());
+                if (card != null) {
+                    card.setBoardColumnId(placement.boardColumnId());
+                    card.setPosition(placement.position());
+                    card.setUpdatedAt(placement.updatedAt());
+                    card.setCompletedAt(placement.completedAt());
+                }
+            }
+        }
+
+        @Override
+        public void reorder(CardPlacement placement) {
+            Card card = byId.get(placement.cardId());
+            if (card != null) {
+                card.setBoardColumnId(placement.boardColumnId());
+                card.setPosition(placement.position());
+                card.setUpdatedAt(placement.updatedAt());
+                card.setCompletedAt(placement.completedAt());
+            }
         }
     }
 
@@ -244,29 +324,43 @@ class BoardServiceTest {
         }
 
         @Override
-        public Workspace update(Workspace workspace) {
-            byId.put(workspace.getId(), workspace);
-            return workspace;
-        }
-
-        @Override
         public Optional<Workspace> findById(long id) {
             return Optional.ofNullable(byId.get(id));
         }
 
         @Override
         public List<Workspace> findAll() {
-            return new ArrayList<>(byId.values());
+            List<Workspace> list = new ArrayList<>(byId.values());
+            list.sort(Comparator.comparingLong(Workspace::getId));
+            return list;
         }
 
         @Override
-        public long count() {
-            return byId.size();
+        public List<Workspace> findAllByOwner(long ownerUserId) {
+            List<Workspace> list = new ArrayList<>();
+            for (Workspace w : byId.values()) {
+                if (w.getOwnerUserId() == ownerUserId) {
+                    list.add(w);
+                }
+            }
+            list.sort(Comparator.comparingLong(Workspace::getId));
+            return list;
+        }
+
+        @Override
+        public Workspace update(Workspace workspace) {
+            byId.put(workspace.getId(), workspace);
+            return workspace;
         }
 
         @Override
         public int delete(long id) {
             return byId.remove(id) != null ? 1 : 0;
+        }
+
+        @Override
+        public long count() {
+            return byId.size();
         }
     }
 }

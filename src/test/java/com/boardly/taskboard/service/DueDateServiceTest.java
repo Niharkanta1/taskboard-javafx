@@ -1,6 +1,5 @@
 package com.boardly.taskboard.service;
 
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.DueDateStatus;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,70 +28,61 @@ class DueDateServiceTest {
 
     @Test
     void noDueDateIsNoneForEveryStatus() {
-        for (CardStatus status : CardStatus.values()) {
-            assertEquals(DueDateStatus.NONE, service.status(null, status, TODAY));
-        }
+        assertEquals(DueDateStatus.NONE, service.status(null, false, TODAY));
+        assertEquals(DueDateStatus.NONE, service.status(null, true, TODAY));
     }
 
     @Test
     void yesterdayIsOverdue() {
-        assertEquals(DueDateStatus.OVERDUE, service.status(TODAY.minusDays(1), CardStatus.PLANNED, TODAY));
-        assertEquals(DueDateStatus.OVERDUE, service.status(TODAY.minusDays(1), CardStatus.IN_PROGRESS, TODAY));
+        assertEquals(DueDateStatus.OVERDUE, service.status(TODAY.minusDays(1), false, TODAY));
     }
 
     @Test
     void todayIsDueToday() {
-        // Due dates are date-only, so this holds at any time of day, including midnight.
-        assertEquals(DueDateStatus.DUE_TODAY, service.status(TODAY, CardStatus.PLANNED, TODAY));
-        assertEquals(DueDateStatus.DUE_TODAY, service.status(TODAY, CardStatus.IN_PROGRESS, TODAY));
+        // Due dates are date-only, so this holds at any time of day, including
+        // midnight.
+        assertEquals(DueDateStatus.DUE_TODAY, service.status(TODAY, false, TODAY));
     }
 
     @Test
     void tomorrowIsUpcoming() {
-        assertEquals(DueDateStatus.UPCOMING, service.status(TODAY.plusDays(1), CardStatus.PLANNED, TODAY));
-        assertEquals(DueDateStatus.UPCOMING, service.status(TODAY.plusDays(1), CardStatus.IN_PROGRESS, TODAY));
+        assertEquals(DueDateStatus.UPCOMING, service.status(TODAY.plusDays(1), false, TODAY));
     }
 
     @Test
     void futureDateIsUpcoming() {
-        assertEquals(DueDateStatus.UPCOMING, service.status(TODAY.plusDays(30), CardStatus.PLANNED, TODAY));
+        assertEquals(DueDateStatus.UPCOMING, service.status(TODAY.plusDays(30), false, TODAY));
     }
 
     @Test
-    void completedCardWithPastDueDateIsNotOverdue() {
-        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY.minusDays(1), CardStatus.COMPLETED, TODAY));
+    void finalColumnCardWithPastDueDateIsNotOverdue() {
+        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY.minusDays(1), true, TODAY));
     }
 
     @Test
-    void completedCardWithTodayDueDateIsCompleted() {
-        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY, CardStatus.COMPLETED, TODAY));
+    void finalColumnCardWithTodayDueDateIsCompleted() {
+        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY, true, TODAY));
     }
 
     @Test
-    void completedCardWithFutureDueDateIsCompleted() {
-        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY.plusDays(1), CardStatus.COMPLETED, TODAY));
+    void finalColumnCardWithFutureDueDateIsCompleted() {
+        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY.plusDays(1), true, TODAY));
     }
 
     @Test
-    void closedCardWithPastDueDateIsNotOverdue() {
-        assertEquals(DueDateStatus.COMPLETED, service.status(TODAY.minusDays(1), CardStatus.CLOSED, TODAY));
-    }
-
-    @Test
-    void sameDueDateYieldsDifferentStatusByCardStatus() {
+    void sameDueDateYieldsDifferentStatusByFinalColumn() {
         LocalDate yesterday = TODAY.minusDays(1);
-        assertEquals(DueDateStatus.OVERDUE, service.status(yesterday, CardStatus.PLANNED, TODAY));
-        assertEquals(DueDateStatus.OVERDUE, service.status(yesterday, CardStatus.IN_PROGRESS, TODAY));
-        assertEquals(DueDateStatus.COMPLETED, service.status(yesterday, CardStatus.COMPLETED, TODAY));
-        assertEquals(DueDateStatus.COMPLETED, service.status(yesterday, CardStatus.CLOSED, TODAY));
+        assertEquals(DueDateStatus.OVERDUE, service.status(yesterday, false, TODAY));
+        assertEquals(DueDateStatus.COMPLETED, service.status(yesterday, true, TODAY));
     }
 
     @Test
     void defaultOverloadUsesCurrentDate() {
-        assertEquals(DueDateStatus.NONE, service.status(null, CardStatus.PLANNED));
-        assertEquals(DueDateStatus.OVERDUE, service.status(LocalDate.now().minusDays(1), CardStatus.PLANNED));
-        assertEquals(DueDateStatus.DUE_TODAY, service.status(LocalDate.now(), CardStatus.PLANNED));
-        assertEquals(DueDateStatus.UPCOMING, service.status(LocalDate.now().plusDays(1), CardStatus.PLANNED));
+        assertEquals(DueDateStatus.NONE, service.status(null, false));
+        assertEquals(DueDateStatus.OVERDUE, service.status(LocalDate.now().minusDays(1), false));
+        assertEquals(DueDateStatus.DUE_TODAY, service.status(LocalDate.now(), false));
+        assertEquals(DueDateStatus.UPCOMING, service.status(LocalDate.now().plusDays(1), false));
+        assertEquals(DueDateStatus.COMPLETED, service.status(LocalDate.now().minusDays(1), true));
     }
 
     @Test

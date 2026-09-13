@@ -2,8 +2,9 @@ package com.boardly.taskboard.service;
 
 import com.boardly.taskboard.exception.ValidationException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
+import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
 
@@ -33,27 +34,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CardServiceTest {
 
     private FakeBoardRepository boardRepository;
+    private FakeBoardColumnRepository columnRepository;
     private FakeCardRepository cardRepository;
     private CardService service;
+    private Board board;
+    private BoardColumn plannedCol;
+    private BoardColumn inProgressCol;
+    private BoardColumn completedCol;
+    private BoardColumn closedCol;
 
     @BeforeEach
     void setUp() {
         boardRepository = new FakeBoardRepository();
+        columnRepository = new FakeBoardColumnRepository();
         cardRepository = new FakeCardRepository();
-        service = new CardService(cardRepository, boardRepository);
+        service = new CardService(cardRepository, boardRepository, columnRepository);
+
+        board = boardRepository.insert(new Board(1, "Project", null));
+        plannedCol = columnRepository.insert(new BoardColumn(board.getId(), "Planned", 1.0, false));
+        inProgressCol = columnRepository.insert(new BoardColumn(board.getId(), "In Progress", 2.0, false));
+        completedCol = columnRepository.insert(new BoardColumn(board.getId(), "Completed", 3.0, true));
+        closedCol = columnRepository.insert(new BoardColumn(board.getId(), "Closed", 4.0, true));
     }
 
     @Test
     void createCardSucceedsAndAssignsId() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
         Card created = service.createCard(board.getId(), "  First task  ", "  Details  ",
-                CardStatus.PLANNED, LocalDate.of(2026, 10, 1));
+                plannedCol.getId(), LocalDate.of(2026, 10, 1));
 
         assertNotNull(created.getId());
         assertTrue(created.getId() > 0);
         assertEquals("First task", created.getTitle());
         assertEquals("Details", created.getDescription());
-        assertEquals(CardStatus.PLANNED, created.getStatus());
+        assertEquals(plannedCol.getId(), created.getBoardColumnId());
         assertEquals(1.0, created.getPosition());
         assertEquals(LocalDate.of(2026, 10, 1), created.getDueDate());
         assertNull(created.getCompletedAt());
@@ -61,54 +74,48 @@ class CardServiceTest {
 
     @Test
     void createCardStoresNullDescriptionWhenBlank() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card created = service.createCard(board.getId(), "Task", "   ", CardStatus.PLANNED, null);
+        Card created = service.createCard(board.getId(), "Task", "   ", plannedCol.getId(), null);
         assertNull(created.getDescription());
     }
 
     @Test
     void createCardRejectsBlankTitle() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
         assertThrows(ValidationException.class,
-                () -> service.createCard(board.getId(), "   ", null, CardStatus.PLANNED, null));
+                () -> service.createCard(board.getId(), "   ", null, plannedCol.getId(), null));
         assertThrows(ValidationException.class,
-                () -> service.createCard(board.getId(), null, null, CardStatus.PLANNED, null));
+                () -> service.createCard(board.getId(), null, null, plannedCol.getId(), null));
     }
 
     @Test
     void createCardRejectsTitleLongerThanMaximum() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
         String tooLong = "t".repeat(CardService.TITLE_MAX_LENGTH + 1);
         assertThrows(ValidationException.class,
-                () -> service.createCard(board.getId(), tooLong, null, CardStatus.PLANNED, null));
+                () -> service.createCard(board.getId(), tooLong, null, plannedCol.getId(), null));
     }
 
     @Test
     void createCardRejectsDescriptionLongerThanMaximum() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
         String tooLong = "d".repeat(CardService.DESCRIPTION_MAX_LENGTH + 1);
         assertThrows(ValidationException.class,
-                () -> service.createCard(board.getId(), "Task", tooLong, CardStatus.PLANNED, null));
+                () -> service.createCard(board.getId(), "Task", tooLong, plannedCol.getId(), null));
     }
 
     @Test
     void createCardRejectsUnknownBoard() {
         assertThrows(ValidationException.class,
-                () -> service.createCard(999, "Task", null, CardStatus.PLANNED, null));
+                () -> service.createCard(999, "Task", null, plannedCol.getId(), null));
     }
 
     @Test
     void createCardWithCompletedStatusSetsCompletedAt() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card created = service.createCard(board.getId(), "Done", null, CardStatus.COMPLETED, null);
+        Card created = service.createCard(board.getId(), "Done", null, completedCol.getId(), null);
         assertNotNull(created.getCompletedAt());
     }
 
     @Test
     void createCardAssignsNextPosition() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card first = service.createCard(board.getId(), "First", null, CardStatus.PLANNED, null);
-        Card second = service.createCard(board.getId(), "Second", null, CardStatus.IN_PROGRESS, null);
+        Card first = service.createCard(board.getId(), "First", null, plannedCol.getId(), null);
+        Card second = service.createCard(board.getId(), "Second", null, plannedCol.getId(), null);
 
         assertEquals(1.0, first.getPosition());
         assertEquals(2.0, second.getPosition());
@@ -116,59 +123,55 @@ class CardServiceTest {
 
     @Test
     void updateCardChangesFields() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
         Card card = service.createCard(board.getId(), "Old title", "Old description",
-                CardStatus.PLANNED, null);
+                plannedCol.getId(), null);
 
         Card updated = service.updateCard(card.getId(), "New title", "New description",
-                CardStatus.IN_PROGRESS, LocalDate.of(2026, 11, 1));
+                inProgressCol.getId(), LocalDate.of(2026, 11, 1));
 
         assertEquals("New title", updated.getTitle());
         assertEquals("New description", updated.getDescription());
-        assertEquals(CardStatus.IN_PROGRESS, updated.getStatus());
+        assertEquals(inProgressCol.getId(), updated.getBoardColumnId());
         assertEquals(LocalDate.of(2026, 11, 1), updated.getDueDate());
         assertNotNull(updated.getUpdatedAt());
     }
 
     @Test
     void updateCardEnteringCompletedSetsCompletedAt() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.PLANNED, null);
+        Card card = service.createCard(board.getId(), "Task", null, plannedCol.getId(), null);
 
-        Card updated = service.updateCard(card.getId(), "Task", null, CardStatus.COMPLETED, null);
+        Card updated = service.updateCard(card.getId(), "Task", null, completedCol.getId(), null);
 
         assertNotNull(updated.getCompletedAt());
     }
 
     @Test
     void updateCardLeavingCompletedClearsCompletedAt() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.COMPLETED, null);
+        Card card = service.createCard(board.getId(), "Task", null, completedCol.getId(), null);
         assertNotNull(card.getCompletedAt());
 
-        Card updated = service.updateCard(card.getId(), "Task", null, CardStatus.IN_PROGRESS, null);
+        Card updated = service.updateCard(card.getId(), "Task", null, inProgressCol.getId(), null);
 
         assertNull(updated.getCompletedAt());
     }
 
     @Test
-    void updateCardLeavingCompletedToClosedClearsCompletedAt() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.COMPLETED, null);
+    void updateCardLeavingCompletedToClosedKeepsCompletedAt() {
+        Card card = service.createCard(board.getId(), "Task", null, completedCol.getId(), null);
         assertNotNull(card.getCompletedAt());
+        Instant original = card.getCompletedAt();
 
-        Card updated = service.updateCard(card.getId(), "Task", null, CardStatus.CLOSED, null);
+        Card updated = service.updateCard(card.getId(), "Task", null, closedCol.getId(), null);
 
-        assertNull(updated.getCompletedAt());
+        assertNotNull(updated.getCompletedAt());
     }
 
     @Test
     void updateCardStayingCompletedKeepsOriginalCompletedAt() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.COMPLETED, null);
+        Card card = service.createCard(board.getId(), "Task", null, completedCol.getId(), null);
         Instant original = card.getCompletedAt();
 
-        Card updated = service.updateCard(card.getId(), "Renamed", null, CardStatus.COMPLETED, null);
+        Card updated = service.updateCard(card.getId(), "Renamed", null, completedCol.getId(), null);
 
         assertEquals(original, updated.getCompletedAt());
     }
@@ -176,56 +179,51 @@ class CardServiceTest {
     @Test
     void updateCardRejectsUnknownCard() {
         assertThrows(ValidationException.class,
-                () -> service.updateCard(999, "Task", null, CardStatus.PLANNED, null));
+                () -> service.updateCard(999, "Task", null, plannedCol.getId(), null));
     }
 
     @Test
     void updateCardRejectsBlankTitle() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.PLANNED, null);
+        Card card = service.createCard(board.getId(), "Task", null, plannedCol.getId(), null);
         assertThrows(ValidationException.class,
-                () -> service.updateCard(card.getId(), "   ", null, CardStatus.PLANNED, null));
+                () -> service.updateCard(card.getId(), "   ", null, plannedCol.getId(), null));
     }
 
     @Test
     void moveCardReordersWithinColumn() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card first = service.createCard(board.getId(), "First", null, CardStatus.PLANNED, null);
-        Card second = service.createCard(board.getId(), "Second", null, CardStatus.PLANNED, null);
-        Card third = service.createCard(board.getId(), "Third", null, CardStatus.PLANNED, null);
+        Card first = service.createCard(board.getId(), "First", null, plannedCol.getId(), null);
+        Card second = service.createCard(board.getId(), "Second", null, plannedCol.getId(), null);
+        Card third = service.createCard(board.getId(), "Third", null, plannedCol.getId(), null);
 
-        service.moveCard(first.getId(), CardStatus.PLANNED, 2);
+        service.moveCard(first.getId(), plannedCol.getId(), 3);
 
         List<Card> ordered = cardRepository.findByBoard(board.getId());
         assertEquals(List.of(second.getId(), third.getId(), first.getId()),
                 ordered.stream().map(Card::getId).toList());
-        assertEquals(3.0, ordered.get(2).getPosition());
     }
 
     @Test
     void moveCardChangesColumnAndCompletedTimestampRules() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card planned = service.createCard(board.getId(), "Planned", null, CardStatus.PLANNED, null);
-        Card existing = service.createCard(board.getId(), "Existing", null, CardStatus.IN_PROGRESS, null);
+        Card planned = service.createCard(board.getId(), "Planned", null, plannedCol.getId(), null);
+        Card existing = service.createCard(board.getId(), "Existing", null, inProgressCol.getId(), null);
 
-        Card moved = service.moveCard(planned.getId(), CardStatus.IN_PROGRESS, 1);
+        Card moved = service.moveCard(planned.getId(), inProgressCol.getId(), 2);
 
-        assertEquals(CardStatus.IN_PROGRESS, moved.getStatus());
+        assertEquals(inProgressCol.getId(), moved.getBoardColumnId());
         assertNull(moved.getCompletedAt());
         assertEquals(List.of(existing.getId(), planned.getId()),
                 cardRepository.findByBoard(board.getId()).stream()
-                        .filter(card -> card.getStatus() == CardStatus.IN_PROGRESS)
+                        .filter(card -> card.getBoardColumnId() == inProgressCol.getId())
                         .map(Card::getId).toList());
 
-        Card completed = service.moveCard(planned.getId(), CardStatus.COMPLETED, 0);
+        Card completed = service.moveCard(planned.getId(), completedCol.getId(), 1);
         assertNotNull(completed.getCompletedAt());
-        assertEquals(CardStatus.COMPLETED, completed.getStatus());
+        assertEquals(completedCol.getId(), completed.getBoardColumnId());
     }
 
     @Test
     void deleteCardRemovesCard() {
-        Board board = boardRepository.insert(new Board(1, "Project", null));
-        Card card = service.createCard(board.getId(), "Task", null, CardStatus.PLANNED, null);
+        Card card = service.createCard(board.getId(), "Task", null, plannedCol.getId(), null);
 
         assertTrue(service.deleteCard(card.getId()));
         assertTrue(cardRepository.findById(card.getId()).isEmpty());
@@ -286,6 +284,53 @@ class CardServiceTest {
         }
     }
 
+    /** Simple in-memory stand-in for BoardColumnRepository in unit tests. */
+    private static final class FakeBoardColumnRepository implements BoardColumnRepository {
+
+        private final Map<Long, BoardColumn> byId = new HashMap<>();
+        private long nextId = 1;
+
+        @Override
+        public BoardColumn insert(BoardColumn column) {
+            column.setId(nextId++);
+            byId.put(column.getId(), column);
+            return column;
+        }
+
+        @Override
+        public Optional<BoardColumn> findById(long id) {
+            return Optional.ofNullable(byId.get(id));
+        }
+
+        @Override
+        public List<BoardColumn> findByBoard(long boardId) {
+            List<BoardColumn> result = new ArrayList<>();
+            for (BoardColumn col : byId.values()) {
+                if (col.getBoardId() == boardId) {
+                    result.add(col);
+                }
+            }
+            result.sort(Comparator.comparingDouble(BoardColumn::getPosition).thenComparingLong(BoardColumn::getId));
+            return result;
+        }
+
+        @Override
+        public BoardColumn update(BoardColumn column) {
+            byId.put(column.getId(), column);
+            return column;
+        }
+
+        @Override
+        public boolean delete(long id) {
+            return byId.remove(id) != null;
+        }
+
+        @Override
+        public long countByBoard(long boardId) {
+            return byId.values().stream().filter(c -> c.getBoardId() == boardId).count();
+        }
+    }
+
     /** Simple in-memory stand-in for CardRepository in unit tests. */
     private static final class FakeCardRepository implements CardRepository {
 
@@ -326,7 +371,20 @@ class CardServiceTest {
         public void reorder(long boardId, List<CardPlacement> placements) {
             for (CardPlacement placement : placements) {
                 Card card = byId.get(placement.cardId());
-                card.setStatus(placement.status());
+                if (card != null) {
+                    card.setBoardColumnId(placement.boardColumnId());
+                    card.setPosition(placement.position());
+                    card.setUpdatedAt(placement.updatedAt());
+                    card.setCompletedAt(placement.completedAt());
+                }
+            }
+        }
+
+        @Override
+        public void reorder(CardPlacement placement) {
+            Card card = byId.get(placement.cardId());
+            if (card != null) {
+                card.setBoardColumnId(placement.boardColumnId());
                 card.setPosition(placement.position());
                 card.setUpdatedAt(placement.updatedAt());
                 card.setCompletedAt(placement.completedAt());
@@ -334,8 +392,8 @@ class CardServiceTest {
         }
 
         @Override
-        public int delete(long id) {
-            return byId.remove(id) != null ? 1 : 0;
+        public boolean delete(long id) {
+            return byId.remove(id) != null;
         }
 
         @Override

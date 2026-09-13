@@ -4,9 +4,10 @@ import com.boardly.taskboard.database.DatabaseManager;
 import com.boardly.taskboard.exception.DatabaseException;
 import com.boardly.taskboard.exception.ValidationException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.Workspace;
+import com.boardly.taskboard.repository.impl.BoardColumnRepositoryImpl;
 import com.boardly.taskboard.repository.impl.BoardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.WorkspaceRepositoryImpl;
@@ -40,6 +41,7 @@ class BoardIntegrationTest {
     private static DatabaseManager db;
     private static WorkspaceRepository workspaceRepository;
     private static BoardRepository boardRepository;
+    private static BoardColumnRepository columnRepository;
     private static CardRepository cardRepository;
     private static WorkspaceService workspaceService;
     private static BoardService boardService;
@@ -51,9 +53,10 @@ class BoardIntegrationTest {
         db.initialize();
         workspaceRepository = new WorkspaceRepositoryImpl(db);
         boardRepository = new BoardRepositoryImpl(db);
+        columnRepository = new BoardColumnRepositoryImpl(db);
         cardRepository = new CardRepositoryImpl(db);
         workspaceService = new WorkspaceService(workspaceRepository);
-        boardService = new BoardService(boardRepository, cardRepository, workspaceRepository);
+        boardService = new BoardService(boardRepository, cardRepository, columnRepository, workspaceRepository);
     }
 
     @AfterAll
@@ -94,20 +97,21 @@ class BoardIntegrationTest {
     void loadBoardReturnsCardsOrderedByPosition() {
         Workspace workspace = workspaceService.create("Development", null);
         Board board = boardService.createBoard(workspace.getId(), "Software Project", null);
+        List<BoardColumn> cols = columnRepository.findByBoard(board.getId());
 
         // Insert out of order to prove the repository orders by position.
-        cardRepository.insert(new Card(board.getId(), "Third", null, CardStatus.CLOSED, 3.0, null));
-        cardRepository.insert(new Card(board.getId(), "First", "details", CardStatus.PLANNED, 1.0, null));
-        cardRepository.insert(new Card(board.getId(), "Second", null, CardStatus.IN_PROGRESS, 2.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(3).getId(), "Third", null, 3.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(0).getId(), "First", "details", 1.0, null));
+        cardRepository.insert(new Card(board.getId(), cols.get(1).getId(), "Second", null, 2.0, null));
 
         Board loaded = boardService.loadBoard(board.getId());
         assertEquals(3, loaded.getCards().size());
         assertEquals("First", loaded.getCards().get(0).getTitle());
         assertEquals("Second", loaded.getCards().get(1).getTitle());
         assertEquals("Third", loaded.getCards().get(2).getTitle());
-        assertEquals(CardStatus.PLANNED, loaded.getCards().get(0).getStatus());
-        assertEquals(CardStatus.IN_PROGRESS, loaded.getCards().get(1).getStatus());
-        assertEquals(CardStatus.CLOSED, loaded.getCards().get(2).getStatus());
+        assertEquals(cols.get(0).getId(), loaded.getCards().get(0).getBoardColumnId());
+        assertEquals(cols.get(1).getId(), loaded.getCards().get(1).getBoardColumnId());
+        assertEquals(cols.get(3).getId(), loaded.getCards().get(2).getBoardColumnId());
     }
 
     @Test
@@ -126,11 +130,13 @@ class BoardIntegrationTest {
     void deletingWorkspaceRemovesItsBoardsAndCards() {
         Workspace workspace = workspaceService.create("Cascade", null);
         Board board = boardService.createBoard(workspace.getId(), "Board 1", null);
-        cardRepository.insert(new Card(board.getId(), "Card 1", null, CardStatus.PLANNED, 1.0, null));
+        List<BoardColumn> cols = columnRepository.findByBoard(board.getId());
+        cardRepository.insert(new Card(board.getId(), cols.get(0).getId(), "Card 1", null, 1.0, null));
 
         assertTrue(workspaceService.delete(workspace.getId()));
         assertTrue(boardRepository.findById(board.getId()).isEmpty(), "the board must be removed with the workspace");
-        assertTrue(cardRepository.findByBoard(board.getId()).isEmpty(), "the board's cards must be removed with the workspace");
+        assertTrue(cardRepository.findByBoard(board.getId()).isEmpty(),
+                "the board's cards must be removed with the workspace");
     }
 
     private static void deleteRecursively(Path path) throws IOException {

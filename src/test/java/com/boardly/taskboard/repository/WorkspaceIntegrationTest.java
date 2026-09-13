@@ -3,9 +3,10 @@ package com.boardly.taskboard.repository;
 import com.boardly.taskboard.database.DatabaseManager;
 import com.boardly.taskboard.exception.ValidationException;
 import com.boardly.taskboard.model.Board;
+import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.Workspace;
+import com.boardly.taskboard.repository.impl.BoardColumnRepositoryImpl;
 import com.boardly.taskboard.repository.impl.BoardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.WorkspaceRepositoryImpl;
@@ -40,6 +41,7 @@ class WorkspaceIntegrationTest {
     private static DatabaseManager db;
     private static WorkspaceRepository workspaceRepository;
     private static BoardRepository boardRepository;
+    private static BoardColumnRepository columnRepository;
     private static CardRepository cardRepository;
     private static WorkspaceService workspaceService;
 
@@ -50,6 +52,7 @@ class WorkspaceIntegrationTest {
         db.initialize();
         workspaceRepository = new WorkspaceRepositoryImpl(db);
         boardRepository = new BoardRepositoryImpl(db);
+        columnRepository = new BoardColumnRepositoryImpl(db);
         cardRepository = new CardRepositoryImpl(db);
         workspaceService = new WorkspaceService(workspaceRepository);
     }
@@ -117,8 +120,9 @@ class WorkspaceIntegrationTest {
     void deletingWorkspaceCascadesToBoardsAndCards() {
         Workspace workspace = workspaceService.create("Cascade", null);
         Board board = boardRepository.insert(new Board(workspace.getId(), "Board 1", null));
+        BoardColumn col = columnRepository.insert(new BoardColumn(board.getId(), "Planned", 1.0, false));
         Card card = cardRepository.insert(
-                new Card(board.getId(), "Card 1", null, CardStatus.PLANNED, 1.0, null));
+                new Card(board.getId(), col.getId(), "Card 1", null, 1.0, null));
 
         assertTrue(workspaceService.delete(workspace.getId()));
 

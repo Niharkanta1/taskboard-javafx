@@ -21,8 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ResourceSmokeTest {
 
-    private static final Pattern FXML_IMPORT_PATTERN =
-            Pattern.compile("\\?import\\s+([A-Za-z0-9_.]+)\\?");
+    private static final Pattern FXML_IMPORT_PATTERN = Pattern.compile("\\?import\\s+([A-Za-z0-9_.]+)\\?");
 
     @Test
     void loginFxmlExistsOnClasspath() {
@@ -65,6 +64,12 @@ class ResourceSmokeTest {
     }
 
     @Test
+    void columnDialogFxmlExistsOnClasspath() {
+        assertNotNull(Main.class.getResource(AppConfig.COLUMN_DIALOG_FXML),
+                "ColumnDialog.fxml must exist on the classpath");
+    }
+
+    @Test
     void appCssExistsOnClasspath() {
         assertNotNull(Main.class.getResource(AppConfig.APP_CSS), "app.css must exist on the classpath");
     }
@@ -104,7 +109,8 @@ class ResourceSmokeTest {
                 AppConfig.WORKSPACE_FXML,
                 AppConfig.BOARD_FXML,
                 AppConfig.BOARD_DIALOG_FXML,
-                AppConfig.CARD_DIALOG_FXML);
+                AppConfig.CARD_DIALOG_FXML,
+                AppConfig.COLUMN_DIALOG_FXML);
         for (String fxml : fxmlViews) {
             URL url = Main.class.getResource(fxml);
             assertNotNull(url, fxml + " must exist on the classpath");

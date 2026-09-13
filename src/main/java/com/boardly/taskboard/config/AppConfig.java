@@ -20,6 +20,7 @@ public final class AppConfig {
     public static final String BOARD_FXML = "/fxml/Board.fxml";
     public static final String BOARD_DIALOG_FXML = "/fxml/BoardDialog.fxml";
     public static final String CARD_DIALOG_FXML = "/fxml/CardDialog.fxml";
+    public static final String COLUMN_DIALOG_FXML = "/fxml/ColumnDialog.fxml";
     public static final String DELETE_DIALOG_FXML = "/fxml/DeleteDialog.fxml";
     public static final String STORAGE_CONFIG_FXML = "/fxml/StorageConfig.fxml";
     public static final String CREATE_USER_FXML = "/fxml/CreateUser.fxml";
@@ -46,6 +47,9 @@ public final class AppConfig {
 
     public static final int CARD_DIALOG_WIDTH = 720;
     public static final int CARD_DIALOG_HEIGHT = 560;
+
+    public static final int COLUMN_DIALOG_WIDTH = 420;
+    public static final int COLUMN_DIALOG_HEIGHT = 360;
 
     public static final int DELETE_DIALOG_WIDTH = 420;
     public static final int DELETE_DIALOG_HEIGHT = 240;

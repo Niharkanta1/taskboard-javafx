@@ -4,36 +4,59 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 /**
- * A card belongs to exactly one board.
+ * A card inside a board.
  *
- * <p>Timestamps are stored as ISO-8601 strings in the database.</p>
+ * <p>
+ * Cards are ordered within their column by {@code position}.
+ * {@code boardColumnId} identifies the column the card belongs to,
+ * and {@code completedAt} records when the card entered a final column.
+ * </p>
  */
 public class Card {
 
     private long id;
     private long boardId;
+    private long boardColumnId;
     private String title;
     private String description;
-    private CardStatus status;
     private double position;
     private LocalDate dueDate;
     private Instant createdAt;
     private Instant updatedAt;
     private Instant completedAt;
 
+    /** Transient: the column this card belongs to, set when a board is loaded. */
+    private transient BoardColumn column;
+
     public Card() {
     }
 
-    public Card(long boardId, String title, String description, CardStatus status, double position, LocalDate dueDate) {
+    public Card(long boardId, long boardColumnId, String title, String description,
+            double position, LocalDate dueDate) {
         this.boardId = boardId;
+        this.boardColumnId = boardColumnId;
         this.title = title;
         this.description = description;
-        this.status = status;
         this.position = position;
         this.dueDate = dueDate;
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public Card(Long id, long boardId, long boardColumnId, String title, String description,
+            double position, LocalDate dueDate,
+            Instant createdAt, Instant updatedAt, Instant completedAt) {
+        this.id = id == null ? 0 : id;
+        this.boardId = boardId;
+        this.boardColumnId = boardColumnId;
+        this.title = title;
+        this.description = description;
+        this.position = position;
+        this.dueDate = dueDate;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.completedAt = completedAt;
     }
 
     public long getId() {
@@ -52,6 +75,14 @@ public class Card {
         this.boardId = boardId;
     }
 
+    public long getBoardColumnId() {
+        return boardColumnId;
+    }
+
+    public void setBoardColumnId(long boardColumnId) {
+        this.boardColumnId = boardColumnId;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -66,14 +97,6 @@ public class Card {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public CardStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(CardStatus status) {
-        this.status = status;
     }
 
     public double getPosition() {
@@ -114,5 +137,17 @@ public class Card {
 
     public void setCompletedAt(Instant completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public BoardColumn getColumn() {
+        return column;
+    }
+
+    public void setColumn(BoardColumn column) {
+        this.column = column;
+    }
+
+    public boolean isInFinalColumn() {
+        return column != null && column.isFinal();
     }
 }

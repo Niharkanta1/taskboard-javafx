@@ -1,103 +1,180 @@
-/* Board view styles (Phase 4: kanban columns) */
+/* Board view styles */
 
-.board-header {
+.board-toolbar {
     -fx-background-color: -app-surface;
-    -fx-padding: 16px 24px 12px;
+    -fx-padding: 10px 24px;
     -fx-border-width: 0 0 1 0;
     -fx-border-color: -app-border;
+    -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.04), 4, 0, 0, 1);
 }
 
-.board-workspace {
-    -fx-font-size: 12px;
-    -fx-text-fill: -app-fg-muted;
-}
-
-.board-brand {
-    -fx-text-fill: -app-surface;
-    -fx-font-size: 16px;
+.brand-header-breadcrumb {
+    -fx-text-fill: #7b8581;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
 }
 
-.board-title {
-    -fx-font-size: 20px;
+.brand-header-subtitle {
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 14px;
+}
+
+.brand-header-title {
+    -fx-text-fill: #fffdf8;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
-    -fx-text-fill: -app-fg;
 }
 
 .board-scroll {
     -fx-background-color: -app-bg;
+    -fx-background: -app-bg;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.board-scroll > .viewport {
+    -fx-background-color: -app-bg;
 }
 
 .board-columns {
-    -fx-padding: 16px;
+    -fx-padding: 20px 24px;
+    -fx-background-color: -app-bg;
 }
 
+/* Kanban column container */
 .board-column {
-    -fx-background-color: #f1f5f9;
+    -fx-background-color: #eae5d9;
+    -fx-border-color: -app-border;
+    -fx-border-width: 1px;
     -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
     -fx-padding: 12px;
     -fx-min-width: 280px;
     -fx-pref-width: 280px;
+    -fx-effect: dropshadow(gaussian, rgba(32, 42, 43, 0.08), 8, 0, 0, 2);
 }
 
 .board-column-drag-target {
-    -fx-border-color: #2563eb;
+    -fx-background-color: #e6f4f2;
+    -fx-border-color: -app-accent;
     -fx-border-width: 2px;
     -fx-border-style: dashed;
-    -fx-background-color: #dbeafe;
+    -fx-effect: dropshadow(gaussian, rgba(15, 118, 110, 0.25), 10, 0, 0, 0);
 }
 
-/* Thin vertical line separating the kanban columns */
-.board-divider {
-    -fx-min-width: 1px;
-    -fx-pref-width: 1px;
-    -fx-max-width: 1px;
-    -fx-background-color: -app-border;
+.board-column-header-row {
+    -fx-padding: 2px 2px 8px 2px;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: #ded8cc;
+    -fx-cursor: move;
 }
 
 .board-column-header {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
+    -fx-text-fill: -app-fg;
 }
 
-.board-column-header-row {
-    -fx-padding: 0 0 4px 0;
+.board-column-count {
+    -fx-background-color: #ded8cc;
+    -fx-background-radius: 10px;
+    -fx-padding: 1px 7px;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-fg-secondary;
 }
 
-/* Per-column status accent colors */
-.col-planned .board-column-header {
-    -fx-text-fill: #64748b;
+/* Column header action buttons */
+.column-action-button {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: -app-fg-secondary;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 9px;
+    -fx-cursor: hand;
 }
 
-.col-in-progress .board-column-header {
-    -fx-text-fill: #b45309;
+.column-action-button:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #cbd5e1;
+    -fx-text-fill: -app-fg;
 }
 
-.col-completed .board-column-header {
-    -fx-text-fill: #15803d;
+.column-action-button:pressed {
+    -fx-background-color: #e2e8f0;
 }
 
-.col-closed .board-column-header {
-    -fx-text-fill: #475569;
+.column-delete-button {
+    -fx-background-color: -app-surface;
+    -fx-border-color: #fca5a5;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: -app-danger;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 9px;
+    -fx-cursor: hand;
+}
+
+.column-delete-button:hover {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: -app-danger;
+    -fx-text-fill: -app-danger;
+}
+
+.column-delete-button:pressed {
+    -fx-background-color: #fecaca;
+}
+
+/* Column "+ Add Card" bottom button */
+.column-add-card-button {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-text-fill: -app-accent;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 12px;
+    -fx-cursor: hand;
+}
+
+.column-add-card-button:hover {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: -app-accent;
+    -fx-text-fill: -app-accent-hover;
+}
+
+.column-add-card-button:pressed {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: -app-accent-pressed;
 }
 
 .board-footer {
     -fx-background-color: -app-surface;
     -fx-border-width: 1 0 0 0;
     -fx-border-color: -app-border;
-    -fx-padding: 10px 24px;
+    -fx-padding: 12px 24px;
+}
+
+.board-footer-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-fg-muted;
 }
 
 /* Workspace view (board list) */
 
 .workspace-view-title {
-    -fx-background-color: -app-surface;
-    -fx-text-fill: -app-fg;
+    -fx-background-color: transparent;
+    -fx-text-fill: #fffdf8;
     -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-padding: 14px 20px;
-    -fx-border-width: 0 0 1 0;
-    -fx-border-color: -app-border;
+    -fx-padding: 0;
+    -fx-border-width: 0;
 }
 
 .workspace-view {

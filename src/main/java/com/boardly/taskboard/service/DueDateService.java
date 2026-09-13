@@ -1,6 +1,5 @@
 package com.boardly.taskboard.service;
 
-import com.boardly.taskboard.model.CardStatus;
 import com.boardly.taskboard.model.DueDateStatus;
 
 import java.time.LocalDate;
@@ -16,8 +15,8 @@ import java.util.Locale;
  *   <li>future date → {@link DueDateStatus#UPCOMING}</li>
  *   <li>today → {@link DueDateStatus#DUE_TODAY}</li>
  *   <li>past date → {@link DueDateStatus#OVERDUE}</li>
- *   <li>final card status (COMPLETED or CLOSED) → {@link DueDateStatus#COMPLETED},
- *       so completed/closed cards are never shown as overdue.</li>
+ *   <li>card in a final column (e.g. Completed/Closed) → {@link DueDateStatus#COMPLETED},
+ *       so cards in final columns are never shown as overdue.</li>
  * </ul>
  *
  * <p>Due dates are date-only ({@link LocalDate}); there is no time component,
@@ -30,9 +29,12 @@ public class DueDateService {
 
     /**
      * Determines the due-date status using the current date.
+     *
+     * @param dueDate        the card's due date, or null
+     * @param inFinalColumn  whether the card is in a final column
      */
-    public DueDateStatus status(LocalDate dueDate, CardStatus cardStatus) {
-        return status(dueDate, cardStatus, LocalDate.now());
+    public DueDateStatus status(LocalDate dueDate, boolean inFinalColumn) {
+        return status(dueDate, inFinalColumn, LocalDate.now());
     }
 
     /**
@@ -41,11 +43,11 @@ public class DueDateService {
      * <p>The reference date is exposed for deterministic boundary tests
      * (today, midnight, tomorrow, yesterday).</p>
      */
-    public DueDateStatus status(LocalDate dueDate, CardStatus cardStatus, LocalDate today) {
+    public DueDateStatus status(LocalDate dueDate, boolean inFinalColumn, LocalDate today) {
         if (dueDate == null) {
             return DueDateStatus.NONE;
         }
-        if (cardStatus == CardStatus.COMPLETED || cardStatus == CardStatus.CLOSED) {
+        if (inFinalColumn) {
             return DueDateStatus.COMPLETED;
         }
         if (dueDate.isBefore(today)) {
