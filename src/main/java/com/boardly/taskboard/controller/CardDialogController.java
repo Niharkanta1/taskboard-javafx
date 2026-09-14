@@ -3,13 +3,7 @@ package com.boardly.taskboard.controller;
 import com.boardly.taskboard.config.AppConfig;
 import com.boardly.taskboard.exception.AppException;
 import com.boardly.taskboard.exception.ValidationException;
-import com.boardly.taskboard.model.BoardColumn;
-import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardAttachment;
-import com.boardly.taskboard.model.CardPriority;
-import com.boardly.taskboard.model.CardSeverity;
-import com.boardly.taskboard.model.CardStatus;
-import com.boardly.taskboard.model.Tag;
+import com.boardly.taskboard.model.*;
 import com.boardly.taskboard.service.AttachmentService;
 import com.boardly.taskboard.service.CardService;
 import com.boardly.taskboard.service.MarkdownService;
@@ -22,16 +16,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -116,6 +102,11 @@ public class CardDialogController {
     @FXML
     private Button deleteButton;
 
+    @FXML
+    private VBox checklistsContainer;
+
+    private List<Checklist> cardChecklists = new ArrayList<>();
+
     public CardDialogController(CardService cardService, long boardId, Card existing,
             BoardColumn defaultColumn, HostServices hostServices,
             MarkdownService markdownService, Stage stage) {
@@ -190,6 +181,9 @@ public class CardDialogController {
                     selectedTagIds.add(t.getId());
                 }
             }
+            if (existing.getChecklists() != null) {
+                cardChecklists.addAll(existing.getChecklists());
+            }
             deleteButton.setVisible(true);
             deleteButton.setManaged(true);
             attachButton.setDisable(attachmentService == null);
@@ -205,6 +199,7 @@ public class CardDialogController {
 
         descriptionField.textProperty().addListener((observable, oldValue, newValue) -> refreshPreview());
         setMode(true);
+        renderChecklists();
     }
 
     private void populateColumnChoices() {
@@ -395,15 +390,20 @@ public class CardDialogController {
         CardSeverity severity = severityChoice != null && severityChoice.getValue() != null ? severityChoice.getValue()
                 : CardSeverity.MINOR;
         List<Long> tagIds = new ArrayList<>(selectedTagIds);
+        List<Checklist> checklists = normalizeChecklists();
+        if (checklists == null) {
+            errorLabel.setText("Checklist title must not be empty.");
+            return;
+        }
 
         try {
             if (cardService != null) {
                 if (existing == null) {
                     cardService.createCard(boardId, title, description, selectedColumn.getId(), dueDate, priority,
-                            severity, tagIds);
+                            severity, tagIds, checklists);
                 } else {
                     cardService.updateCard(existing.getId(), title, description, selectedColumn.getId(), dueDate,
-                            priority, severity, tagIds);
+                            priority, severity, tagIds, checklists);
                 }
             }
             saved = true;
@@ -457,6 +457,128 @@ public class CardDialogController {
             logger.error("Failed to delete card", e);
             errorLabel.setText("Unable to delete the card. Please try again.");
         }
+    }
+
+    @FXML
+    private void onAddChecklist() {
+        Checklist newChecklist = new Checklist();
+        newChecklist.setTitle("New Checklist");
+        cardChecklists.add(newChecklist);
+        renderChecklists();
+    }
+
+    private void renderChecklists() {
+        if (checklistsContainer == null) return;
+        checklistsContainer.getChildren().clear();
+
+        for (Checklist checklist : cardChecklists) {
+            VBox checklistBox = new VBox(8);
+            checklistBox.setStyle("-fx-background-color: #f8fafc; -fx-padding: 10; -fx-background-radius: 6; -fx-border-color: #e2e8f0; -fx-border-radius: 6;");
+
+            // Title and Delete Button
+            HBox headerBox = new HBox(10);
+            headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            TextField titleField = new TextField(checklist.getTitle());
+            titleField.setStyle("-fx-background-color: transparent; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 0;");
+            HBox.setHgrow(titleField, Priority.ALWAYS);
+
+            titleField.textProperty().addListener((obs, oldVal, newVal) -> {
+                checklist.setTitle(newVal);
+            });
+
+            Button deleteBtn = new Button("Delete");
+            deleteBtn.getStyleClass().add("dialog-delete");
+            deleteBtn.setOnAction(e -> {
+                cardChecklists.remove(checklist);
+                renderChecklists();
+            });
+            headerBox.getChildren().addAll(titleField, deleteBtn);
+
+            // Progress Bar
+            ProgressBar progressBar = new ProgressBar(calculateProgress(checklist));
+            progressBar.setMaxWidth(Double.MAX_VALUE);
+            progressBar.setStyle("-fx-accent: #10b981;"); // Green progress
+
+            // Items
+            VBox itemsBox = new VBox(5);
+            for (ChecklistItem item : checklist.getItems()) {
+                HBox itemBox = new HBox(8);
+                itemBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+                CheckBox cb = new CheckBox(item.getText());
+                cb.setSelected(item.isCompleted());
+                cb.setOnAction(e -> {
+                    item.setCompleted(cb.isSelected());
+                    progressBar.setProgress(calculateProgress(checklist));
+                });
+
+                Button delItemBtn = new Button("x");
+                delItemBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-cursor: hand;");
+                delItemBtn.setOnAction(e -> {
+                    checklist.getItems().remove(item);
+                    renderChecklists(); // Re-render to update UI and progress
+                });
+
+                itemBox.getChildren().addAll(cb, delItemBtn);
+                itemsBox.getChildren().add(itemBox);
+            }
+
+            // Add new item field
+            HBox newItemBox = new HBox(8);
+            TextField newItemField = new TextField();
+            newItemField.setPromptText("Add an item...");
+            HBox.setHgrow(newItemField, Priority.ALWAYS);
+
+            Button addItemBtn = new Button("Add");
+            addItemBtn.setOnAction(e -> {
+                String text = newItemField.getText().trim();
+                if (!text.isEmpty()) {
+                    ChecklistItem newItem = new ChecklistItem();
+                    newItem.setText(text);
+                    newItem.setCompleted(false);
+                    checklist.getItems().add(newItem);
+                    renderChecklists(); // Re-render
+                }
+            });
+            newItemBox.getChildren().addAll(newItemField, addItemBtn);
+
+            checklistBox.getChildren().addAll(headerBox, progressBar, itemsBox, newItemBox);
+            checklistsContainer.getChildren().add(checklistBox);
+        }
+    }
+
+    private double calculateProgress(Checklist checklist) {
+        if (checklist.getItems().isEmpty()) return 0.0;
+        long completed = checklist.getItems().stream().filter(ChecklistItem::isCompleted).count();
+        return (double) completed / checklist.getItems().size();
+    }
+
+    /**
+     * Returns the checklists in their current dialog state, normalized:
+     * titles and item texts are trimmed, items with blank text are dropped.
+     * Returns {@code null} when any checklist has a blank title.
+     */
+    private List<Checklist> normalizeChecklists() {
+        List<Checklist> result = new ArrayList<>();
+        for (Checklist checklist : cardChecklists) {
+            String title = checklist.getTitle() == null ? "" : checklist.getTitle().trim();
+            if (title.isEmpty()) {
+                return null;
+            }
+            checklist.setTitle(title);
+            List<ChecklistItem> items = new ArrayList<>();
+            for (ChecklistItem item : checklist.getItems()) {
+                String text = item.getText() == null ? "" : item.getText().trim();
+                if (text.isEmpty()) {
+                    continue;
+                }
+                item.setText(text);
+                items.add(item);
+            }
+            checklist.setItems(items);
+            result.add(checklist);
+        }
+        return result;
     }
 
     public boolean isSaved() {

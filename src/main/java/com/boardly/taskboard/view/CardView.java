@@ -1,10 +1,6 @@
 package com.boardly.taskboard.view;
 
-import com.boardly.taskboard.model.Card;
-import com.boardly.taskboard.model.CardPriority;
-import com.boardly.taskboard.model.CardSeverity;
-import com.boardly.taskboard.model.DueDateStatus;
-import com.boardly.taskboard.model.Tag;
+import com.boardly.taskboard.model.*;
 import com.boardly.taskboard.service.DueDateService;
 import com.boardly.taskboard.service.MarkdownService;
 
@@ -169,6 +165,29 @@ public class CardView extends VBox {
             metadata.setMaxWidth(Double.MAX_VALUE);
             Region metadataSpacer = new Region();
             HBox.setHgrow(metadataSpacer, Priority.ALWAYS);
+
+            int totalItems = 0;
+            int completedItems = 0;
+
+            // Assume card.getChecklists() is available
+            if (card.getChecklists() != null) {
+                for (Checklist cl : card.getChecklists()) {
+                    totalItems += cl.getItems().size();
+                    completedItems += cl.getItems().stream().filter(ChecklistItem::isCompleted).count();
+                }
+            }
+
+            if (totalItems > 0) {
+                Label checklistBadge = new Label("☑ " + completedItems + "/" + totalItems);
+                checklistBadge.getStyleClass().add("card-attachment-count");
+
+                // Highlight green if all are completed
+                if (completedItems == totalItems) {
+                    checklistBadge.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-padding: 2 6; -fx-background-radius: 4;");
+                }
+
+                metadata.getChildren().add(checklistBadge);
+            }
 
             Label dueLabel = new Label(dueDateService.displayText(dueStatus, card.getDueDate()));
             if (dueStatus != DueDateStatus.NONE) {

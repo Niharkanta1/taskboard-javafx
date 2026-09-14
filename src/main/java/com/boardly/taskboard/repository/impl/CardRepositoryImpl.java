@@ -6,6 +6,7 @@ import com.boardly.taskboard.model.Card;
 import com.boardly.taskboard.model.CardPriority;
 import com.boardly.taskboard.model.CardSeverity;
 import com.boardly.taskboard.repository.CardRepository;
+import com.boardly.taskboard.repository.ChecklistRepository;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,9 +25,15 @@ public class CardRepositoryImpl implements CardRepository {
     private static final String COLUMNS = "id, board_id, board_column_id, title, description, position, due_date, created_at, updated_at, completed_at, priority, severity";
 
     private final DatabaseManager databaseManager;
+    private final ChecklistRepository checklistRepository;
 
     public CardRepositoryImpl(DatabaseManager databaseManager) {
+        this(databaseManager, new ChecklistRepositoryImpl(databaseManager));
+    }
+
+    public CardRepositoryImpl(DatabaseManager databaseManager, ChecklistRepository checklistRepository) {
         this.databaseManager = databaseManager;
+        this.checklistRepository = checklistRepository;
     }
 
     @Override
@@ -226,6 +233,7 @@ public class CardRepositoryImpl implements CardRepository {
         } catch (Exception ignored) {
             card.setSeverity(CardSeverity.MINOR);
         }
+        card.setChecklists(checklistRepository.findByCardId(card.getId()));
         return card;
     }
 

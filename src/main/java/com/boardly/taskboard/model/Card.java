@@ -29,6 +29,7 @@ public class Card {
     private CardPriority priority = CardPriority.MEDIUM;
     private CardSeverity severity = CardSeverity.MINOR;
     private List<Tag> tags = new ArrayList<>();
+    private List<Checklist> checklists = new ArrayList<>();
 
     /** Transient: the column this card belongs to, set when a board is loaded. */
     private transient BoardColumn column;
@@ -196,5 +197,13 @@ public class Card {
 
     public boolean isInFinalColumn() {
         return column != null && column.isFinal();
+    }
+
+    public List<Checklist> getChecklists() {
+        return checklists;
+    }
+
+    public void setChecklists(List<Checklist> checklists) {
+        this.checklists = checklists;
     }
 }

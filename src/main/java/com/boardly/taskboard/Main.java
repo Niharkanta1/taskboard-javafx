@@ -7,6 +7,7 @@ import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
 import com.boardly.taskboard.repository.CardAttachmentRepository;
+import com.boardly.taskboard.repository.ChecklistRepository;
 import com.boardly.taskboard.repository.TagRepository;
 import com.boardly.taskboard.repository.UserRepository;
 import com.boardly.taskboard.repository.WorkspaceRepository;
@@ -14,6 +15,7 @@ import com.boardly.taskboard.repository.impl.BoardColumnRepositoryImpl;
 import com.boardly.taskboard.repository.impl.BoardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardRepositoryImpl;
 import com.boardly.taskboard.repository.impl.CardAttachmentRepositoryImpl;
+import com.boardly.taskboard.repository.impl.ChecklistRepositoryImpl;
 import com.boardly.taskboard.repository.impl.TagRepositoryImpl;
 import com.boardly.taskboard.repository.impl.UserRepositoryImpl;
 import com.boardly.taskboard.repository.impl.WorkspaceRepositoryImpl;
@@ -76,13 +78,15 @@ public class Main extends Application {
         BoardRepository boardRepository = new BoardRepositoryImpl(databaseManager);
         BoardColumnRepository columnRepository = new BoardColumnRepositoryImpl(databaseManager);
         TagRepository tagRepository = new TagRepositoryImpl(databaseManager);
-        CardRepository cardRepository = new CardRepositoryImpl(databaseManager);
+        ChecklistRepository checklistRepository = new ChecklistRepositoryImpl(databaseManager);
+        CardRepository cardRepository = new CardRepositoryImpl(databaseManager, checklistRepository);
         CardAttachmentRepository attachmentRepository = new CardAttachmentRepositoryImpl(databaseManager);
         AuthService authService = new AuthService(userRepository);
         WorkspaceService workspaceService = new WorkspaceService(workspaceRepository);
         BoardService boardService = new BoardService(boardRepository, cardRepository, columnRepository,
                 workspaceRepository, tagRepository);
-        CardService cardService = new CardService(cardRepository, boardRepository, columnRepository, tagRepository);
+        CardService cardService = new CardService(cardRepository, boardRepository, columnRepository, tagRepository,
+                checklistRepository);
         TagService tagService = new TagService(tagRepository);
         ColumnService columnService = new ColumnService(columnRepository, cardRepository, cardService);
         AttachmentService attachmentService = new AttachmentService(AppPaths.getAttachmentsPath(),

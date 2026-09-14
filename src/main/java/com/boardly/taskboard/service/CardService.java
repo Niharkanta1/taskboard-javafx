@@ -5,10 +5,12 @@ import com.boardly.taskboard.model.BoardColumn;
 import com.boardly.taskboard.model.Card;
 import com.boardly.taskboard.model.CardPriority;
 import com.boardly.taskboard.model.CardSeverity;
+import com.boardly.taskboard.model.Checklist;
 import com.boardly.taskboard.model.Tag;
 import com.boardly.taskboard.repository.BoardColumnRepository;
 import com.boardly.taskboard.repository.BoardRepository;
 import com.boardly.taskboard.repository.CardRepository;
+import com.boardly.taskboard.repository.ChecklistRepository;
 import com.boardly.taskboard.repository.TagRepository;
 
 import org.slf4j.Logger;
@@ -42,13 +44,21 @@ public class CardService {
     private final BoardRepository boardRepository;
     private final BoardColumnRepository columnRepository;
     private final TagRepository tagRepository;
+    private final ChecklistRepository checklistRepository;
 
     public CardService(CardRepository cardRepository, BoardRepository boardRepository,
             BoardColumnRepository columnRepository, TagRepository tagRepository) {
+        this(cardRepository, boardRepository, columnRepository, tagRepository, null);
+    }
+
+    public CardService(CardRepository cardRepository, BoardRepository boardRepository,
+            BoardColumnRepository columnRepository, TagRepository tagRepository,
+            ChecklistRepository checklistRepository) {
         this.cardRepository = cardRepository;
         this.boardRepository = boardRepository;
         this.columnRepository = columnRepository;
         this.tagRepository = tagRepository;
+        this.checklistRepository = checklistRepository;
     }
 
     public CardService(CardRepository cardRepository, BoardRepository boardRepository,
@@ -68,6 +78,12 @@ public class CardService {
 
     public Card createCard(long boardId, String title, String description,
             long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity, List<Long> tagIds) {
+        return createCard(boardId, title, description, boardColumnId, dueDate, priority, severity, tagIds, null);
+    }
+
+    public Card createCard(long boardId, String title, String description,
+            long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity,
+            List<Long> tagIds, List<Checklist> checklists) {
         if (boardId <= 0) {
             throw new ValidationException("Board id is required");
         }
@@ -86,10 +102,14 @@ public class CardService {
                 priority != null ? priority : CardPriority.MEDIUM,
                 severity != null ? severity : CardSeverity.MINOR,
                 null);
+        card.setChecklists(checklists != null ? new ArrayList<>(checklists) : new ArrayList<>());
         Card saved = cardRepository.insert(card);
         if (tagRepository != null && tagIds != null) {
             tagRepository.setCardTags(saved.getId(), tagIds);
             saved.setTags(tagRepository.findByCardId(saved.getId()));
+        }
+        if (checklistRepository != null) {
+            checklistRepository.syncForCard(saved.getId(), saved.getChecklists());
         }
         logger.info("Created card '{}' (id={}) in column {}", saved.getTitle(), saved.getId(), boardColumnId);
         return saved;
@@ -104,6 +124,12 @@ public class CardService {
 
     public Card updateCard(long id, String title, String description,
             long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity, List<Long> tagIds) {
+        return updateCard(id, title, description, boardColumnId, dueDate, priority, severity, tagIds, null);
+    }
+
+    public Card updateCard(long id, String title, String description,
+            long boardColumnId, LocalDate dueDate, CardPriority priority, CardSeverity severity,
+            List<Long> tagIds, List<Checklist> checklists) {
         Card existing = requireCard(id);
         BoardColumn col = requireColumn(boardColumnId);
         String trimmedTitle = requireTitle(title);
@@ -128,12 +154,16 @@ public class CardService {
                 priority != null ? priority : existing.getPriority(),
                 severity != null ? severity : existing.getSeverity(),
                 existing.getTags());
+        updated.setChecklists(checklists != null ? new ArrayList<>(checklists) : new ArrayList<>());
         Card saved = cardRepository.update(updated);
         if (tagRepository != null && tagIds != null) {
             tagRepository.setCardTags(saved.getId(), tagIds);
             saved.setTags(tagRepository.findByCardId(saved.getId()));
         } else if (tagRepository != null) {
             saved.setTags(tagRepository.findByCardId(saved.getId()));
+        }
+        if (checklistRepository != null) {
+            checklistRepository.syncForCard(saved.getId(), saved.getChecklists());
         }
         logger.info("Updated card '{}' (id={})", saved.getTitle(), saved.getId());
         return saved;
@@ -246,8 +276,19 @@ public class CardService {
     }
 
     public Card requireCard(long cardId) {
-        return cardRepository.findById(cardId)
+        Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ValidationException("Card not found: " + cardId));
+        if (checklistRepository != null) {
+            card.setChecklists(checklistRepository.findByCardId(cardId));
+        }
+        return card;
+    }
+
+    /**
+     * Loads a card including its checklists.
+     */
+    public Card getCard(long cardId) {
+        return requireCard(cardId);
     }
 
     private BoardColumn requireColumn(long boardColumnId) {

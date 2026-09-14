@@ -34,6 +34,14 @@ public final class MigrationManager {
             int applied = flyway.migrate().migrationsExecuted;
             logger.info("Database migrations applied: {} change(s)", applied);
         } catch (FlywayException e) {
+            // A checksum mismatch means the migration files changed after this
+            // database was created. Auto-repair would rewrite the history and
+            // leave the schema out of sync with the code, so fail loudly instead.
+            if (isChecksumMismatch(e)) {
+                logger.error("Migration files no longer match this database; refusing to auto-repair. "
+                        + "Restore the original migration files or reset the database.", e);
+                throw new DatabaseException("Database migration validation failed", e);
+            }
             logger.warn("Initial migration/validation encountered an issue; attempting schema repair: {}",
                     e.getMessage());
             try {
@@ -45,5 +53,9 @@ public final class MigrationManager {
                 throw new DatabaseException("Database migration failed", repairError);
             }
         }
+    }
+
+    private static boolean isChecksumMismatch(FlywayException e) {
+        return e.getMessage() != null && e.getMessage().contains("checksum mismatch");
     }
 }
